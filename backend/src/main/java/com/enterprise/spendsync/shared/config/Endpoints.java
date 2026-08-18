@@ -126,4 +126,13 @@ public final class Endpoints {
         public static final String OVERRIDE = "/invoices/{id}/override";
         public static final String REJECT = "/invoices/{id}/reject";
     }
+
+    public static final class Payment {
+        public static final String BASE = API_V1 + "/payments";
+        public static final String DUE_INVOICES = "/invoices/due";
+        public static final String BATCHES = "/batches";
+        public static final String BATCH_BY_ID = "/batches/{id}";
+        public static final String APPROVE_BATCH = "/batches/{id}/approve";
+        public static final String CANCEL_BATCH = "/batches/{id}/cancel";
+    }
 }

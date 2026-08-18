@@ -231,6 +231,33 @@ public class AuditEventListener {
         });
     }
 
+    @EventListener
+    public void onPaymentDispatched(com.enterprise.spendsync.payment.internal.event.PaymentDispatchedEvent event) {
+        runWithTenant(event.tenantId(), () -> {
+            log.info("Audit trail recording PAYMENT_RELEASED for Batch: {}", event.batchNumber());
+            auditService.recordAuditLog(new RecordAuditRequest(
+                    UUID.randomUUID().toString(),
+                    AuditAction.BUDGET_COMMITTED,
+                    ComplianceTag.SOX_404_FINANCIAL_CONTROL,
+                    event.approvedByUserId(),
+                    null,
+                    "TREASURY_CFO",
+                    "127.0.0.1",
+                    "SpringDomainEventBus",
+                    "PAYMENT_BATCH",
+                    event.batchNumber(),
+                    event.legalEntityId(),
+                    null,
+                    event.totalAmount(),
+                    event.currency(),
+                    "APPROVED",
+                    "DISPATCHED",
+                    "Payment batch dispatched to bank with " + event.itemCount() + " invoices.",
+                    "{\"batchId\":\"" + event.paymentBatchId() + "\",\"itemCount\":" + event.itemCount() + "}"
+            ));
+        });
+    }
+
     private void runWithTenant(UUID tenantId, Runnable action) {
         TenantContext.setTenantId(tenantId);
         try {

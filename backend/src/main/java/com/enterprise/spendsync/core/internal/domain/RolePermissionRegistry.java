@@ -53,6 +53,7 @@ public class RolePermissionRegistry {
                 Permission.GR_CREATE,
                 Permission.GR_READ,
                 Permission.INVOICE_READ,
+                Permission.PAYMENT_RELEASE,
                 Permission.AUDIT_READ
         ));
 
@@ -63,7 +64,10 @@ public class RolePermissionRegistry {
                 Permission.BUDGET_READ,
                 Permission.BUDGET_MANAGE,
                 Permission.PR_READ_ALL,
+                Permission.PO_READ,
+                Permission.GR_READ,
                 Permission.INVOICE_READ,
+                Permission.PAYMENT_RELEASE,
                 Permission.AUDIT_READ
         ));
 
