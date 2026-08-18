@@ -24,3 +24,11 @@ spring:
 
 server:
   port: 8080
+
+spendsync:
+  jwt:
+    # 512-bit base64 secret (HS512) for secure JWT signing
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A
+    access-token-expiry-seconds: 900 # 15 minutes
+    refresh-token-expiry-days: 7 # 7 days
+

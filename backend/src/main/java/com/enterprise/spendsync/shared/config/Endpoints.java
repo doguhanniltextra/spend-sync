@@ -17,6 +17,8 @@ public final class Endpoints {
         public static final String REGISTER_USER = "/register-user";
         public static final String USERS_BY_ID = "/users/{id}";
         public static final String LOGIN = "/login";
+        public static final String REFRESH = "/refresh";
+        public static final String LOGOUT = "/logout";
 
         // Sub-Account & Onboarding Endpoints
         public static final String SUBACCOUNT_INVITE_DETAILS = "/invitations/subaccount/{token}";
@@ -55,5 +57,56 @@ public final class Endpoints {
         public static final String GENERATE_REQUISITIONER_LINK = "/users/generate-requisitioner-link";
         public static final String INVITATIONS = "/invitations";
         public static final String INVITATION_BY_ID = "/invitations/{id}";
+    }
+
+    public static final class Budget {
+        public static final String BASE = API_V1 + "/budget";
+        public static final String POOLS = "/pools";
+        public static final String POOL_BY_ID = "/pools/{id}";
+        public static final String POOL_STATUS = "/pools/{id}/status";
+        public static final String POOL_ADJUST = "/pools/{id}/adjust";
+        public static final String POOL_TRANSACTIONS = "/pools/{id}/transactions";
+        public static final String TRANSFERS = "/transfers";
+        public static final String SUMMARY = "/summary";
+    }
+
+    public static final class Requisition {
+        public static final String BASE = API_V1 + "/requisitions";
+        public static final String MY_REQUISITIONS = "/my-requisitions";
+        public static final String REQUISITION_BY_ID = "/{id}";
+        public static final String PENDING_APPROVALS = "/pending-approvals";
+        public static final String APPROVE = "/{id}/approve";
+        public static final String REJECT = "/{id}/reject";
+        public static final String CANCEL = "/{id}/cancel";
+
+        public static final String APPROVAL_LIMITS = "/approval-limits";
+        public static final String APPROVAL_LIMIT_BY_ID = "/approval-limits/{id}";
+        public static final String APPROVAL_LIMIT_STATUS = "/approval-limits/{id}/status";
+        public static final String EFFECTIVE_LIMIT = "/approval-limits/effective";
+    }
+
+    public static final class Purchasing {
+        public static final String BASE = API_V1 + "/purchasing";
+
+        // Vendor Management
+        public static final String VENDORS_BASE = BASE + "/vendors";
+        public static final String VENDOR_BY_ID = "/{id}";
+        public static final String VENDOR_STATUS = "/{id}/status";
+
+        // Purchase Orders
+        public static final String ORDERS_BASE = BASE + "/orders";
+        public static final String ORDER_BY_ID = "/{id}";
+        public static final String ORDER_ISSUE = "/{id}/issue";
+        public static final String ORDER_REVISE = "/{id}/revise";
+        public static final String ORDER_REVISIONS = "/{id}/revisions";
+        public static final String ORDER_CANCEL = "/{id}/cancel";
+    }
+
+    public static final class Audit {
+        public static final String BASE = API_V1 + "/audit";
+        public static final String LOGS = "/logs";
+        public static final String TIMELINE = "/logs/timeline/{entityType}/{entityId}";
+        public static final String CORRELATION = "/logs/correlation/{correlationId}";
+        public static final String VIOLATIONS = "/violations";
     }
 }
