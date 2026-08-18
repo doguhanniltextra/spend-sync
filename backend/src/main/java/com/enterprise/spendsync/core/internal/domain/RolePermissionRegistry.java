@@ -50,6 +50,7 @@ public class RolePermissionRegistry {
                 Permission.PO_READ,
                 Permission.PO_UPDATE,
                 Permission.VENDOR_MANAGE,
+                Permission.GR_CREATE,
                 Permission.GR_READ,
                 Permission.INVOICE_READ,
                 Permission.AUDIT_READ
