@@ -172,6 +172,65 @@ public class AuditEventListener {
         });
     }
 
+    @EventListener
+    public void onGoodsReceived(com.enterprise.spendsync.receiving.internal.event.GoodsReceivedEvent event) {
+        runWithTenant(event.tenantId(), () -> {
+            log.info("Audit trail recording GOODS_RECEIPT_CREATED for GR: {} (PO: {})", event.receiptNumber(), event.poNumber());
+            auditService.recordAuditLog(new RecordAuditRequest(
+                    UUID.randomUUID().toString(),
+                    AuditAction.GOODS_RECEIPT_CREATED,
+                    ComplianceTag.ISO_9001_TRACEABILITY,
+                    event.receivedByUserId(),
+                    null,
+                    "FACILITY_USER",
+                    "127.0.0.1",
+                    "SpringDomainEventBus",
+                    "GOODS_RECEIPT",
+                    event.receiptNumber(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "COMPLETED",
+                    "Goods received against PO " + event.poNumber() + " with Waybill " + event.waybillNumber(),
+                    "{\"grId\":\"" + event.goodsReceiptId() + "\",\"poId\":\"" + event.purchaseOrderId() + "\",\"waybill\":\"" + event.waybillNumber() + "\"}"
+            ));
+        });
+    }
+
+    @EventListener
+    public void onInvoiceMatched(com.enterprise.spendsync.matching.internal.event.InvoiceMatchedEvent event) {
+        runWithTenant(event.tenantId(), () -> {
+            log.info("Audit trail recording INVOICE_MATCH for Invoice: {} (Status: {})", event.invoiceNumber(), event.matchStatus());
+            AuditAction action = event.matchStatus() == com.enterprise.spendsync.matching.internal.domain.InvoiceMatchStatus.AUTO_MATCHED
+                    || event.matchStatus() == com.enterprise.spendsync.matching.internal.domain.InvoiceMatchStatus.MANUALLY_MATCHED
+                    ? AuditAction.INVOICE_MATCH_SUCCESS
+                    : AuditAction.INVOICE_MATCH_FAILED;
+
+            auditService.recordAuditLog(new RecordAuditRequest(
+                    UUID.randomUUID().toString(),
+                    action,
+                    ComplianceTag.SOX_404_FINANCIAL_CONTROL,
+                    null,
+                    null,
+                    "AP_SPECIALIST",
+                    "127.0.0.1",
+                    "SpringDomainEventBus",
+                    "SUPPLIER_INVOICE",
+                    event.invoiceNumber(),
+                    null,
+                    null,
+                    event.totalAmount(),
+                    event.currency(),
+                    "EVALUATING",
+                    event.matchStatus().name(),
+                    event.discrepancyReason() != null ? event.discrepancyReason() : "3-Way Match evaluation completed.",
+                    "{\"invoiceId\":\"" + event.invoiceId() + "\",\"ettn\":\"" + event.ettn() + "\",\"poId\":\"" + event.purchaseOrderId() + "\"}"
+            ));
+        });
+    }
+
     private void runWithTenant(UUID tenantId, Runnable action) {
         TenantContext.setTenantId(tenantId);
         try {

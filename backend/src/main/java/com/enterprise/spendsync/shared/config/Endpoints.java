@@ -109,4 +109,21 @@ public final class Endpoints {
         public static final String CORRELATION = "/logs/correlation/{correlationId}";
         public static final String VIOLATIONS = "/violations";
     }
+
+    public static final class Receiving {
+        public static final String BASE = API_V1 + "/receiving";
+        public static final String RECEIPTS = "/receipts";
+        public static final String RECEIPT_BY_ID = "/receipts/{id}";
+        public static final String RECEIPTS_BY_PO = "/receipts/by-po/{poId}";
+        public static final String PENDING_ORDERS = "/orders/pending";
+    }
+
+    public static final class Matching {
+        public static final String BASE = API_V1 + "/matching";
+        public static final String INVOICES = "/invoices";
+        public static final String INVOICE_BY_ID = "/invoices/{id}";
+        public static final String INVOICES_BY_PO = "/invoices/by-po/{poId}";
+        public static final String OVERRIDE = "/invoices/{id}/override";
+        public static final String REJECT = "/invoices/{id}/reject";
+    }
 }
