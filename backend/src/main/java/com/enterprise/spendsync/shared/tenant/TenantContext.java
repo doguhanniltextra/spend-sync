@@ -1,13 +1,17 @@
 package com.enterprise.spendsync.shared.tenant;
 
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
+import com.enterprise.spendsync.shared.security.UserPrincipal;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * ThreadLocal context holder for the active Tenant ID.
+ * Context holder for the active Tenant ID.
+ * Resolves from ThreadLocal storage or active JWT SecurityContext principal.
  * Ensures strict multi-tenant data isolation across all service layers and database queries.
  */
 public final class TenantContext {
@@ -23,7 +27,20 @@ public final class TenantContext {
     }
 
     public static Optional<UUID> getTenantId() {
-        return Optional.ofNullable(CURRENT_TENANT.get());
+        UUID tenantId = CURRENT_TENANT.get();
+        if (tenantId != null) {
+            return Optional.of(tenantId);
+        }
+
+        // Fallback: Resolve tenantId from SecurityContext UserPrincipal (JWT authentication)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
+            if (principal.getTenantId() != null) {
+                return Optional.of(principal.getTenantId());
+            }
+        }
+
+        return Optional.empty();
     }
 
     public static UUID getRequiredTenantId() {

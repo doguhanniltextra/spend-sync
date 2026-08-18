@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface CostCenterRepository extends JpaRepository<CostCenter, UUID> {
     List<CostCenter> findAllByTenantId(UUID tenantId);
+    Optional<CostCenter> findByIdAndTenantId(UUID id, UUID tenantId);
     List<CostCenter> findAllByLegalEntityId(UUID legalEntityId);
     Optional<CostCenter> findByTenantIdAndCode(UUID tenantId, String code);
     boolean existsByTenantIdAndCode(UUID tenantId, String code);

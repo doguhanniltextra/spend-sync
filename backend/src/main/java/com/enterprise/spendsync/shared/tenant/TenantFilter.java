@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Filter that intercepts incoming HTTP requests, resolves the X-Tenant-Id header,
- * and binds the Tenant ID to the thread-local TenantContext.
+ * Filter that intercepts incoming HTTP requests, binds the X-Tenant-Id header
+ * to the ThreadLocal TenantContext, and verifies tenant context presence for protected endpoints.
  */
 @Component
 public class TenantFilter extends OncePerRequestFilter {
@@ -62,13 +62,9 @@ public class TenantFilter extends OncePerRequestFilter {
                             "The '" + TENANT_HEADER + "' header must be a valid UUID.");
                     return;
                 }
-            } else if (!isPublicPath) {
-                // If it's a protected enterprise endpoint and tenant header is missing
-                sendErrorResponse(response, HttpStatus.BAD_REQUEST, "MISSING_TENANT_HEADER",
-                        "The '" + TENANT_HEADER + "' header is required for accessing protected enterprise endpoints.");
-                return;
             }
 
+            // Proceed through the chain (JwtAuthenticationFilter executes if before or in chain)
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();

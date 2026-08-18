@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface LegalEntityRepository extends JpaRepository<LegalEntity, UUID> {
     List<LegalEntity> findAllByTenantId(UUID tenantId);
+    Optional<LegalEntity> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<LegalEntity> findByTenantIdAndCompanyCode(UUID tenantId, String companyCode);
     boolean existsByTenantIdAndTaxNumber(UUID tenantId, String taxNumber);
 }

@@ -1,11 +1,14 @@
 package com.enterprise.spendsync.core.internal.web;
 
+import com.enterprise.spendsync.core.internal.dto.GenerateRequisitionerLinkRequest;
 import com.enterprise.spendsync.core.internal.dto.InviteSubAccountRequest;
+import com.enterprise.spendsync.core.internal.dto.RequisitionerLinkResponse;
 import com.enterprise.spendsync.core.internal.dto.SubAccountInvitationResponse;
 import com.enterprise.spendsync.core.internal.dto.UpdateStatusRequest;
 import com.enterprise.spendsync.core.internal.dto.UpdateUserLegalEntitiesRequest;
 import com.enterprise.spendsync.core.internal.dto.UpdateUserRolesRequest;
 import com.enterprise.spendsync.core.internal.dto.UserResponse;
+import com.enterprise.spendsync.core.internal.service.RequisitionerInvitationService;
 import com.enterprise.spendsync.core.internal.service.SubAccountInvitationService;
 import com.enterprise.spendsync.core.internal.service.UserManagementService;
 import com.enterprise.spendsync.shared.config.Endpoints;
@@ -30,12 +33,15 @@ import java.util.UUID;
 public class UserManagementController {
 
     private final UserManagementService userManagementService;
-    private final SubAccountInvitationService invitationService;
+    private final SubAccountInvitationService subAccountInvitationService;
+    private final RequisitionerInvitationService requisitionerInvitationService;
 
     public UserManagementController(UserManagementService userManagementService,
-                                  SubAccountInvitationService invitationService) {
+                                  SubAccountInvitationService subAccountInvitationService,
+                                  RequisitionerInvitationService requisitionerInvitationService) {
         this.userManagementService = userManagementService;
-        this.invitationService = invitationService;
+        this.subAccountInvitationService = subAccountInvitationService;
+        this.requisitionerInvitationService = requisitionerInvitationService;
     }
 
     @GetMapping(Endpoints.Organization.USERS)
@@ -65,18 +71,24 @@ public class UserManagementController {
 
     @PostMapping(Endpoints.Organization.INVITE_SUBACCOUNT)
     public ResponseEntity<SubAccountInvitationResponse> inviteSubAccount(@Valid @RequestBody InviteSubAccountRequest request) {
-        SubAccountInvitationResponse response = invitationService.inviteSubAccount(request);
+        SubAccountInvitationResponse response = subAccountInvitationService.inviteSubAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping(Endpoints.Organization.GENERATE_REQUISITIONER_LINK)
+    public ResponseEntity<RequisitionerLinkResponse> generateRequisitionerLink(@Valid @RequestBody GenerateRequisitionerLinkRequest request) {
+        RequisitionerLinkResponse response = requisitionerInvitationService.generateRequisitionerLink(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping(Endpoints.Organization.INVITATIONS)
     public ResponseEntity<List<SubAccountInvitationResponse>> getAllActiveInvitations() {
-        return ResponseEntity.ok(invitationService.getAllActiveInvitations());
+        return ResponseEntity.ok(subAccountInvitationService.getAllActiveInvitations());
     }
 
     @DeleteMapping(Endpoints.Organization.INVITATION_BY_ID)
     public ResponseEntity<Void> revokeInvitation(@PathVariable UUID id) {
-        invitationService.revokeInvitation(id);
+        subAccountInvitationService.revokeInvitation(id);
         return ResponseEntity.noContent().build();
     }
 }
