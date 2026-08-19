@@ -54,14 +54,18 @@ export interface CrossAssignmentWarning {
 
 export interface RequisitionSummaryResponse {
   id:                   UUID
-  prNumber:             string
+  requisitionNumber?:   string
+  prNumber?:            string
   title:                string
-  costCenterId:         UUID
-  costCenterCode:       string
+  costCenterId?:        UUID
+  costCenterCode?:      string
   costCenterName:       string
-  requesterId:          UUID
-  requesterName:        string
-  totalEstimatedAmount: number
+  requisitionerId?:     UUID
+  requisitionerName?:   string
+  requesterId?:         UUID
+  requesterName?:       string
+  totalAmount?:         number
+  totalEstimatedAmount?:number
   currency:             string
   status:               WorkflowStatus
   createdAt:            ISODateString

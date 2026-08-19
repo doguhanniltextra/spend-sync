@@ -54,7 +54,7 @@ export default function RequisitionListPage() {
         cell: ({ row }) => (
           <div>
             <span className="font-mono font-bold text-slate-900 block">
-              {row.original.prNumber}
+              {row.original.requisitionNumber || row.original.prNumber}
             </span>
           </div>
         ),
@@ -74,9 +74,11 @@ export default function RequisitionListPage() {
         cell: ({ row }) => (
           <div>
             <span className="text-slate-900 font-medium">{row.original.costCenterName}</span>
-            <span className="text-[10px] font-mono text-slate-400 block">
-              {row.original.costCenterCode}
-            </span>
+            {row.original.costCenterCode && (
+              <span className="text-[10px] font-mono text-slate-400 block">
+                {row.original.costCenterCode}
+              </span>
+            )}
           </div>
         ),
       },
@@ -84,7 +86,9 @@ export default function RequisitionListPage() {
         accessorKey: 'requesterName',
         header: REQUISITION_COPY.list.colRequester,
         cell: ({ row }) => (
-          <span className="text-slate-700">{row.original.requesterName}</span>
+          <span className="text-slate-700">
+            {row.original.requisitionerName || row.original.requesterName}
+          </span>
         ),
       },
       {
@@ -95,7 +99,7 @@ export default function RequisitionListPage() {
         cell: ({ row }) => (
           <div className="text-right font-mono font-bold text-slate-900">
             <CurrencyDisplay
-              amount={row.original.totalEstimatedAmount}
+              amount={row.original.totalAmount ?? row.original.totalEstimatedAmount ?? 0}
               currency={row.original.currency as any}
             />
           </div>

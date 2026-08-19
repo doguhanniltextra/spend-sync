@@ -68,7 +68,7 @@ export function MyRequisitionsList({ requisitions }: MyRequisitionsListProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right font-mono font-bold text-slate-900">
-                      {formatCurrency(req.totalEstimatedAmount, req.currency as any)}
+                      {formatCurrency(req.totalAmount ?? req.totalEstimatedAmount ?? 0, req.currency as any)}
                     </td>
                     <td className="px-4 py-3.5 text-center">
                       <span

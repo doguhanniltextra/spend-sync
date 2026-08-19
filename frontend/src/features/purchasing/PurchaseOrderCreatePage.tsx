@@ -194,10 +194,14 @@ export default function PurchaseOrderCreatePage() {
 
   const approvedPROptions = [
     { value: '', label: PURCHASING_COPY.create.selectPRPlaceholder },
-    ...approvedPRs.map((pr) => ({
-      value: pr.id,
-      label: `${pr.prNumber} • ${pr.title} (${pr.totalEstimatedAmount} ${pr.currency})`,
-    })),
+    ...approvedPRs.map((pr) => {
+      const num = pr.requisitionNumber || pr.prNumber || 'PR'
+      const amt = pr.totalAmount ?? pr.totalEstimatedAmount ?? 0
+      return {
+        value: pr.id,
+        label: `${num} • ${pr.title} (${amt.toLocaleString('tr-TR')} ${pr.currency})`,
+      }
+    }),
   ]
 
   return (
