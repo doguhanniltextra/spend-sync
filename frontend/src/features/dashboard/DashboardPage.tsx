@@ -145,9 +145,6 @@ export default function DashboardPage() {
         user?.email === 'cfo@spendsync.com') && (
         <CFOExecutiveDeck
           pools={budgetSummary?.pools ?? []}
-          totalAllocated={totalAllocated}
-          totalSpent={budgetSummary?.totalSpent || 0}
-          totalReserved={budgetSummary?.totalReserved || 0}
         />
       )}
 
