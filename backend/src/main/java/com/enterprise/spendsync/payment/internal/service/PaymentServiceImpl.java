@@ -239,7 +239,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             emailService.sendTemplatedEmail(
                     item.getVendor().getOrderEmail(),
-                    "Ödeme Dekontu / Remittance Advice: " + inv.getInvoiceNumber() + " - " + batch.getBatchNumber(),
+                    "Payment Remittance Advice: " + inv.getInvoiceNumber() + " - " + batch.getBatchNumber(),
                     "payment-remittance-advice",
                     emailData
             );

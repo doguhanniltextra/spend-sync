@@ -90,4 +90,21 @@ export const ENDPOINTS = {
     correlation: (correlationId: string) => `/audit/logs/correlation/${correlationId}`,
     violations:               '/audit/violations',
   },
+  catalog: {
+    search:                   '/catalog/search',
+    categories:               '/catalog/categories',
+    itemById: (id: string)    => `/catalog/items/${id}`,
+    autofill: (id: string)    => `/catalog/items/${id}/autofill`,
+    health:                   '/catalog/health',
+  },
+  adminCatalog: {
+    items:                    '/admin/catalog/items',
+    itemById: (id: string)    => `/admin/catalog/items/${id}`,
+    categories:               '/admin/catalog/categories',
+    import:                   '/admin/catalog/import',
+    export:                   '/admin/catalog/export',
+  },
+  analytics: {
+    cfoDeck:                  '/analytics/cfo-deck',
+  },
 } as const

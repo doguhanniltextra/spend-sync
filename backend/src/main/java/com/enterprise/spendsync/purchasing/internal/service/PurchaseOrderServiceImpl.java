@@ -253,7 +253,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         emailService.sendTemplatedEmail(
                 savedPo.getVendor().getOrderEmail(),
-                "Resmi Satın Alma Siparişi: " + savedPo.getPoNumber() + " - " + savedPo.getLegalEntity().getName(),
+                "Official Purchase Order: " + savedPo.getPoNumber() + " - " + savedPo.getLegalEntity().getName(),
                 "purchase-order-issued",
                 emailData
         );

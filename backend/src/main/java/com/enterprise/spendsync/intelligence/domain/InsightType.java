@@ -1,0 +1,12 @@
+package com.enterprise.spendsync.intelligence.domain;
+
+public enum InsightType {
+    BUDGET_RUNWAY_WARNING,
+    CASH_DISCOUNT_OPPORTUNITY,
+    APPROVAL_SLA_BOTTLENECK,
+    DISCREPANCY_LEGAL_RISK,
+    SPEND_ANOMALY,
+    PRICE_SAVINGS_OPPORTUNITY,
+    POLICY_COMPLIANCE_NOTICE,
+    QUICK_BRIEFING
+}

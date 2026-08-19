@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
+import { RoleBasedRoute } from './RoleBasedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ROUTES } from '@/constants/routes'
+import { PERMISSIONS } from '@/constants/permissions'
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────────
 
@@ -15,6 +17,7 @@ const ApprovalQueuePage     = lazy(() => import('@/features/approvals/ApprovalQu
 const PurchaseOrderListPage = lazy(() => import('@/features/purchasing/PurchaseOrderListPage'))
 const PurchaseOrderCreatePage = lazy(() => import('@/features/purchasing/PurchaseOrderCreatePage'))
 const VendorListPage        = lazy(() => import('@/features/purchasing/VendorListPage'))
+const CatalogManagementPage = lazy(() => import('@/features/catalog/pages/CatalogManagementPage'))
 const ReceivingListPage     = lazy(() => import('@/features/receiving/ReceivingListPage'))
 const GoodsReceiptCreatePage = lazy(() => import('@/features/receiving/GoodsReceiptCreatePage'))
 const ReceivingHistoryPage  = lazy(() => import('@/features/receiving/ReceivingHistoryPage'))
@@ -90,6 +93,14 @@ export const router = createBrowserRouter([
           {
             path:    ROUTES.purchasing.vendors,
             element: <SuspenseWrapper><VendorListPage /></SuspenseWrapper>,
+          },
+          {
+            path:    ROUTES.catalog.root,
+            element: (
+              <RoleBasedRoute permission={PERMISSIONS.purchasing.manageVendors}>
+                <SuspenseWrapper><CatalogManagementPage /></SuspenseWrapper>
+              </RoleBasedRoute>
+            ),
           },
           {
             path:    ROUTES.receiving.root,

@@ -15,6 +15,8 @@ public class UserPrincipal implements UserDetails {
 
     private final UUID id;
     private final UUID tenantId;
+    private final UUID vendorId;
+    private final String userType; // "USER" or "VENDOR"
     private final String email;
     private final String password;
     private final String fullName;
@@ -30,8 +32,23 @@ public class UserPrincipal implements UserDetails {
                          boolean active,
                          Set<RoleType> roles,
                          Collection<? extends GrantedAuthority> authorities) {
+        this(id, tenantId, null, "USER", email, password, fullName, active, roles, authorities);
+    }
+
+    public UserPrincipal(UUID id,
+                         UUID tenantId,
+                         UUID vendorId,
+                         String userType,
+                         String email,
+                         String password,
+                         String fullName,
+                         boolean active,
+                         Set<RoleType> roles,
+                         Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.tenantId = tenantId;
+        this.vendorId = vendorId;
+        this.userType = userType != null ? userType : "USER";
         this.email = email;
         this.password = password;
         this.fullName = fullName;
@@ -62,6 +79,18 @@ public class UserPrincipal implements UserDetails {
 
     public UUID getTenantId() {
         return tenantId;
+    }
+
+    public UUID getVendorId() {
+        return vendorId;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public boolean isVendor() {
+        return "VENDOR".equalsIgnoreCase(userType);
     }
 
     public String getEmail() {

@@ -1,0 +1,139 @@
+package com.enterprise.spendsync.intelligence.internal.engine;
+
+import com.enterprise.spendsync.intelligence.dto.WhatIfBudgetImpactResponse;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+public final class SpendIntelligenceCalculator {
+
+    private SpendIntelligenceCalculator() {}
+
+    /**
+     * Calculates the average daily spend amount since the start of the fiscal year.
+     */
+    public static BigDecimal calculateDailyBurnRate(BigDecimal totalSpent, int elapsedDaysInYear) {
+        if (totalSpent == null || totalSpent.compareTo(BigDecimal.ZERO) <= 0 || elapsedDaysInYear <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return totalSpent.divide(BigDecimal.valueOf(elapsedDaysInYear), 4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Calculates the estimated number of runway days until remaining budget reaches zero.
+     */
+    public static int calculateRunwayDays(BigDecimal availableBudget, BigDecimal dailyBurnRate) {
+        if (availableBudget == null || availableBudget.compareTo(BigDecimal.ZERO) <= 0 ||
+            dailyBurnRate == null || dailyBurnRate.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0;
+        }
+        return availableBudget.divide(dailyBurnRate, 0, RoundingMode.HALF_UP).intValue();
+    }
+
+    /**
+     * Calculates estimated exhaustion date by adding runway days to the reference date.
+     */
+    public static LocalDate calculateEstimatedExhaustionDate(LocalDate fromDate, int runwayDays) {
+        if (fromDate == null || runwayDays <= 0) {
+            return LocalDate.now().plusDays(365);
+        }
+        return fromDate.plusDays(runwayDays);
+    }
+
+    /**
+     * Calculates potential dynamic cash discount amount (e.g. 2% discount on gross invoice amount).
+     */
+    public static BigDecimal calculateCashDiscount(BigDecimal grossAmount, BigDecimal discountRatePercent) {
+        if (grossAmount == null || grossAmount.compareTo(BigDecimal.ZERO) <= 0 ||
+            discountRatePercent == null || discountRatePercent.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return grossAmount.multiply(discountRatePercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Calculates the annualized APR yield for early payment discount terms (e.g. 2/10 Net 30 -> 36.73% APR).
+     * Formula: APR = (Discount% / (100 - Discount%)) * (360 / (NetTerms - DiscountTerms)) * 100
+     */
+    public static BigDecimal calculateAnnualizedApr(BigDecimal discountPercent, int netTermsDays, int discountTermsDays) {
+        int daysSaved = netTermsDays - discountTermsDays;
+        if (daysSaved <= 0 || discountPercent == null || discountPercent.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal numerator = discountPercent.multiply(BigDecimal.valueOf(360));
+        BigDecimal denominator = BigDecimal.valueOf(100).subtract(discountPercent).multiply(BigDecimal.valueOf(daysSaved));
+        return numerator.divide(denominator, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+    }
+
+    /**
+     * Simulates the marginal budget impact of an unapproved purchase requisition on a cost center budget.
+     */
+    public static WhatIfBudgetImpactResponse evaluateWhatIfImpact(
+            UUID costCenterId,
+            String costCenterName,
+            BigDecimal allocated,
+            BigDecimal spent,
+            BigDecimal reserved,
+            BigDecimal proposedAmount) {
+
+        BigDecimal safeAllocated = allocated != null ? allocated : BigDecimal.ZERO;
+        BigDecimal safeSpent = spent != null ? spent : BigDecimal.ZERO;
+        BigDecimal safeReserved = reserved != null ? reserved : BigDecimal.ZERO;
+        BigDecimal safeProposed = proposedAmount != null ? proposedAmount : BigDecimal.ZERO;
+
+        BigDecimal currentCommitted = safeSpent.add(safeReserved);
+        BigDecimal currentUtilization = safeAllocated.compareTo(BigDecimal.ZERO) > 0
+                ? currentCommitted.divide(safeAllocated, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+                : BigDecimal.ZERO;
+
+        BigDecimal simulatedCommitted = currentCommitted.add(safeProposed);
+        BigDecimal simulatedUtilization = safeAllocated.compareTo(BigDecimal.ZERO) > 0
+                ? simulatedCommitted.divide(safeAllocated, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+                : BigDecimal.ZERO;
+
+        BigDecimal marginalIncrease = simulatedUtilization.subtract(currentUtilization);
+        boolean causesOverrun = simulatedCommitted.compareTo(safeAllocated) > 0;
+        boolean exceedsWarning = simulatedUtilization.compareTo(BigDecimal.valueOf(80)) >= 0;
+
+        String riskMessage = causesOverrun
+                ? String.format("CRITICAL OVERRUN: Approving this PR will cause budget deficit by %s TRY (%%%.1f utilization).",
+                    simulatedCommitted.subtract(safeAllocated).setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                    simulatedUtilization.doubleValue())
+                : exceedsWarning
+                ? String.format("THRESHOLD ALERT: Approving this PR will elevate cost center utilization into high-risk zone (%%%.1f).",
+                    simulatedUtilization.doubleValue())
+                : String.format("BUDGET COMPLIANT: Cost center utilization will increase marginally by +%%%.1f to %%%.1f.",
+                    marginalIncrease.doubleValue(), simulatedUtilization.doubleValue());
+
+        return new WhatIfBudgetImpactResponse(
+                costCenterId,
+                costCenterName,
+                safeAllocated.setScale(2, RoundingMode.HALF_UP),
+                currentCommitted.setScale(2, RoundingMode.HALF_UP),
+                currentUtilization.setScale(1, RoundingMode.HALF_UP),
+                safeProposed.setScale(2, RoundingMode.HALF_UP),
+                simulatedCommitted.setScale(2, RoundingMode.HALF_UP),
+                simulatedUtilization.setScale(1, RoundingMode.HALF_UP),
+                marginalIncrease.setScale(1, RoundingMode.HALF_UP),
+                causesOverrun,
+                exceedsWarning,
+                riskMessage
+        );
+    }
+
+    /**
+     * Evaluates remaining days under the Turkish Commercial Code (TTK m.23) 8-day defect notice window.
+     */
+    public static int calculateRemainingStatutoryNoticeDays(LocalDate waybillDate, LocalDate currentDate, int statutoryLimitDays) {
+        if (waybillDate == null || currentDate == null) {
+            return statutoryLimitDays;
+        }
+        long daysElapsed = ChronoUnit.DAYS.between(waybillDate, currentDate);
+        int remaining = statutoryLimitDays - (int) daysElapsed;
+        return Math.max(remaining, 0);
+    }
+}

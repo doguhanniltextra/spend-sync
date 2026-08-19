@@ -12,10 +12,11 @@ export const PERMISSIONS = {
     cancel:   'PR_CANCEL',
   },
   purchasing: {
-    readPO:    'PO_READ',
-    createPO:  'PO_CREATE',
-    issuePO:   'PO_ISSUE',
-    cancelPO:  'PO_CANCEL',
+    readPO:        'PO_READ',
+    createPO:      'PO_CREATE',
+    issuePO:       'PO_ISSUE',
+    cancelPO:      'PO_CANCEL',
+    manageVendors: 'VENDOR_MANAGE',
   },
   receiving: {
     create:   'GR_CREATE',

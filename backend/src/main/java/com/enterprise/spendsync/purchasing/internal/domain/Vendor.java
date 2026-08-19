@@ -79,7 +79,8 @@ public class Vendor {
     @Column(name = "bank_name", length = 100)
     private String bankName;
 
-    @Column(name = "iban", length = 50)
+    @jakarta.persistence.Convert(converter = com.enterprise.spendsync.shared.crypto.EncryptedStringConverter.class)
+    @Column(name = "iban", length = 255)
     private String iban;
 
     @Enumerated(EnumType.STRING)

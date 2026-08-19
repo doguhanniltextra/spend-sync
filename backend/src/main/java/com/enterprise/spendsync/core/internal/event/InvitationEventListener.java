@@ -19,15 +19,15 @@ public class InvitationEventListener {
     @Async
     @EventListener
     public void handleSubAccountInvited(SubAccountInvitedEvent event) {
-        String subject = event.companyName() + " - SpendSync Platformuna Davet Edildiniz";
+        String subject = event.companyName() + " - You are invited to SpendSync Platform";
 
         Map<String, Object> model = Map.of(
-                "Şirket", event.companyName(),
-                "Tüzel Kişilik", event.legalEntityName(),
-                "Atanan Roller", event.targetRoles().toString(),
-                "Davet Bağlantısı", event.inviteUrl(),
-                "Geçerlilik Bitiş", event.expiresAt().toString(),
-                "Güvenlik Notu", "Bu bağlantı tek kullanımlıktır. Lütfen başkalarıyla paylaşmayınız."
+                "Company", event.companyName(),
+                "Legal Entity", event.legalEntityName(),
+                "Assigned Roles", event.targetRoles().toString(),
+                "Invitation Link", event.inviteUrl(),
+                "Expires At", event.expiresAt().toString(),
+                "Security Note", "This link is single-use only. Please do not share it with unauthorized parties."
         );
 
         emailService.sendTemplatedEmail(

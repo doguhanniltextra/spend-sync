@@ -53,4 +53,8 @@ export const ROUTES = {
   audit: {
     root:     '/audit',
   },
+
+  catalog: {
+    root:     '/admin/catalog',
+  },
 } as const

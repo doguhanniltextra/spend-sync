@@ -24,6 +24,10 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UU
 
     List<PurchaseOrder> findAllByTenantIdAndVendorIdOrderByCreatedAtDesc(UUID tenantId, UUID vendorId);
 
+    List<PurchaseOrder> findAllByTenantIdAndVendorIdAndStatusOrderByCreatedAtDesc(UUID tenantId, UUID vendorId, PurchaseOrderStatus status);
+
+    Optional<PurchaseOrder> findByIdAndTenantIdAndVendorId(UUID id, UUID tenantId, UUID vendorId);
+
     List<PurchaseOrder> findAllByTenantIdAndRequisitionId(UUID tenantId, UUID requisitionId);
 
     @Query("SELECT COUNT(po) FROM PurchaseOrder po WHERE po.tenant.id = :tenantId")

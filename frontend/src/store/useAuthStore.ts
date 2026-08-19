@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { AuthUser, AuthTokenResponse } from '@/types/auth.types'
+import { useTenantStore } from './useTenantStore'
 
 interface AuthState {
   user:         AuthUser | null
@@ -72,6 +73,9 @@ export const useAuthStore = create<AuthState>()(
               : Array.from(response.roles as unknown as Set<string>),
           },
         })
+        if (response.tenantId) {
+          useTenantStore.getState().setTenant(response.tenantId)
+        }
       },
 
       logout: () => {
@@ -81,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
           refreshToken:    null,
           isAuthenticated: false,
         })
+        useTenantStore.getState().clearTenant()
       },
 
       hasRole: (role: string) => {

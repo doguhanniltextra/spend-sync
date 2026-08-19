@@ -1,9 +1,12 @@
-import { Trash2, Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Trash2, Plus, Boxes } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { MoneyInput, CurrencyDisplay } from '@/components/ui/MoneyInput'
+import { CatalogPickerModal } from '@/features/catalog/components/picker/CatalogPickerModal'
 import type { CreateLineItemRequest } from '@/types/requisition.types'
+import type { CatalogAutofillResponse } from '@/features/catalog/types/catalog.types'
 import { REQUISITION_COPY } from '../constants/requisitionCopy'
 
 interface LineItemsEditorTableProps {
@@ -17,6 +20,9 @@ export function LineItemsEditorTable({
   currency,
   onChange,
 }: LineItemsEditorTableProps) {
+  const [isCatalogPickerOpen, setIsCatalogPickerOpen] = useState(false)
+  const [targetLineIndex, setTargetLineIndex] = useState<number | null>(null)
+
   const handleAddItem = () => {
     const newItem: CreateLineItemRequest = {
       itemDescription: '',
@@ -26,6 +32,60 @@ export function LineItemsEditorTable({
       unitPrice:       0,
     }
     onChange([...items, newItem])
+  }
+
+  const handleOpenCatalogForNew = () => {
+    setTargetLineIndex(null)
+    setIsCatalogPickerOpen(true)
+  }
+
+  const handleOpenCatalogForRow = (index: number) => {
+    setTargetLineIndex(index)
+    setIsCatalogPickerOpen(true)
+  }
+
+  const handleCatalogSelect = (autofill: CatalogAutofillResponse) => {
+    const suggestion = autofill.lineItemSuggestion
+
+    if (targetLineIndex !== null && targetLineIndex >= 0 && targetLineIndex < items.length) {
+      // Update existing row
+      const existing = items[targetLineIndex]
+      const updated = items.map((item, i) => {
+        if (i === targetLineIndex) {
+          return {
+            ...item,
+            itemDescription: suggestion.description,
+            unitPrice: suggestion.unitPrice,
+            unitOfMeasure: suggestion.unitOfMeasure,
+            quantity: existing.quantity > 0 ? existing.quantity : suggestion.quantity,
+          }
+        }
+        return item
+      })
+      onChange(updated)
+    } else {
+      // Add as new row (or replace first empty row if only 1 empty row exists)
+      if (items.length === 1 && !items[0].itemDescription.trim() && items[0].unitPrice === 0) {
+        onChange([
+          {
+            itemDescription: suggestion.description,
+            itemCategory:    'IT_HARDWARE',
+            quantity:        suggestion.quantity || 1,
+            unitOfMeasure:   suggestion.unitOfMeasure || 'PIECE',
+            unitPrice:       suggestion.unitPrice || 0,
+          },
+        ])
+      } else {
+        const newItem: CreateLineItemRequest = {
+          itemDescription: suggestion.description,
+          itemCategory:    'IT_HARDWARE',
+          quantity:        suggestion.quantity || 1,
+          unitOfMeasure:   suggestion.unitOfMeasure || 'PIECE',
+          unitPrice:       suggestion.unitPrice || 0,
+        }
+        onChange([...items, newItem])
+      }
+    }
   }
 
   const handleRemoveItem = (index: number) => {
@@ -46,32 +106,45 @@ export function LineItemsEditorTable({
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
-      <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
+      <div className="p-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-slate-900">
             {REQUISITION_COPY.create.sectionLineItems}
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Add at least one line item with unit price and quantity.
+            Select pre-approved catalog items or enter custom line items manually.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAddItem}
-          leftIcon={<Plus className="w-3.5 h-3.5" />}
-        >
-          {REQUISITION_COPY.create.addLineItemCTA}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleOpenCatalogForNew}
+            leftIcon={<Boxes className="w-3.5 h-3.5 text-indigo-600" />}
+            className="border-indigo-200 hover:bg-indigo-50/50 text-indigo-700 font-medium"
+          >
+            Select from Catalog
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddItem}
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+          >
+            {REQUISITION_COPY.create.addLineItemCTA}
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-3 min-w-[220px]">{REQUISITION_COPY.create.colItemDesc}</th>
+              <th className="px-4 py-3 min-w-[240px]">{REQUISITION_COPY.create.colItemDesc}</th>
               <th className="px-3 py-3 min-w-[170px]">{REQUISITION_COPY.create.colCategory}</th>
               <th className="px-3 py-3 w-24 text-right">{REQUISITION_COPY.create.colQty}</th>
               <th className="px-3 py-3 w-32">{REQUISITION_COPY.create.colUOM}</th>
@@ -86,16 +159,28 @@ export function LineItemsEditorTable({
 
               return (
                 <tr key={index} className="hover:bg-slate-50/40">
-                  {/* Description */}
+                  {/* Description with quick catalog icon */}
                   <td className="px-4 py-2.5">
-                    <Input
-                      value={item.itemDescription}
-                      onChange={(e) =>
-                        handleUpdateItem(index, { itemDescription: e.target.value })
-                      }
-                      placeholder="Item description or service..."
-                      required
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1">
+                        <Input
+                          value={item.itemDescription}
+                          onChange={(e) =>
+                            handleUpdateItem(index, { itemDescription: e.target.value })
+                          }
+                          placeholder="Item description or service details..."
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCatalogForRow(index)}
+                        title="Select & Auto-fill from Catalog"
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors shrink-0"
+                      >
+                        <Boxes className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
 
                   {/* Category */}
@@ -182,6 +267,13 @@ export function LineItemsEditorTable({
           />
         </div>
       </div>
+
+      {/* Catalog Picker Modal */}
+      <CatalogPickerModal
+        isOpen={isCatalogPickerOpen}
+        onClose={() => setIsCatalogPickerOpen(false)}
+        onSelect={handleCatalogSelect}
+      />
     </div>
   )
 }

@@ -227,7 +227,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
 
             emailService.sendTemplatedEmail(
                     requisitionerEmail,
-                    "Mal Kabul Gerçekleşti: " + savedGr.getReceiptNumber() + " - " + po.getPoNumber(),
+                    "Goods Receipt Completed: " + savedGr.getReceiptNumber() + " - " + po.getPoNumber(),
                     "goods-receipt-completed",
                     emailData
             );

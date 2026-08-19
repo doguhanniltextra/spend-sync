@@ -84,8 +84,8 @@ export function GoodsReceiptDetailDrawer({ receiptId, onClose }: GoodsReceiptDet
                 <strong className="text-slate-900 text-sm">{receipt.vendorName}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Waybill # (İrsaliye No):</span>
-                <span className="font-mono font-bold text-slate-900 text-sm">{receipt.waybillNumber}</span>
+                <span className="text-slate-400 block text-[10px]">Waybill / Delivery Note #:</span>
+                <span className="font-mono font-medium text-slate-800">{receipt.waybillNumber}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px]">Waybill Dispatch Date:</span>

@@ -19,7 +19,7 @@ import { useToast } from '@/components/feedback/Toast'
 
 const createGRSchema = z.object({
   purchaseOrderId: z.string().min(1, 'Purchase order is required'),
-  waybillNumber:   z.string().min(2, 'Waybill / İrsaliye number is mandatory'),
+  waybillNumber:   z.string().min(2, 'Waybill / delivery note number is required'),
   waybillDate:     z.string().min(10, 'Valid waybill date is required'),
   notes:           z.string().optional(),
 })

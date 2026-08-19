@@ -3,7 +3,7 @@ spring:
     name: SpendSync
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/spendsync_db
+    url: jdbc:postgresql://127.0.0.1:5432/spendsync_db?sslmode=disable
     username: spendsync
     password: spendsync_secret
     driver-class-name: org.postgresql.Driver

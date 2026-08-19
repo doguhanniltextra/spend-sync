@@ -55,6 +55,7 @@ export const MESSAGES = {
     budgets:          'Budgets',
     organization:     'Organization',
     audit:            'Audit Trail',
+    catalog:          'Item Catalog',
     logout:           'Sign Out',
     collapse:         'Collapse sidebar',
     expand:           'Expand sidebar',

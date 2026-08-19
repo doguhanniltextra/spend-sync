@@ -122,6 +122,38 @@ public class RolePermissionRegistry {
                 Permission.PR_READ_OWN
         ));
 
+        // ── VENDOR_ADMIN ──────────────────────────────────────────────────────
+        // Vendor Primary Contact / General Manager. Full control within the supplier's tenant boundary.
+        map.put(RoleType.VENDOR_ADMIN, EnumSet.of(
+                Permission.VENDOR_USER_MANAGE,
+                Permission.VENDOR_BANK_MANAGE,
+                Permission.VENDOR_PO_READ,
+                Permission.VENDOR_PO_ACK,
+                Permission.VENDOR_ASN_DISPATCH,
+                Permission.VENDOR_INVOICE_CREATE,
+                Permission.VENDOR_FINANCE_READ,
+                Permission.VENDOR_DISCOUNT_ACCEPT,
+                Permission.VENDOR_RECON_APPROVE
+        ));
+
+        // ── VENDOR_FINANCE ────────────────────────────────────────────────────
+        // Vendor Accounting / Finance specialist. Manages invoicing, AP status, discount acceptance, and reconciliation.
+        map.put(RoleType.VENDOR_FINANCE, EnumSet.of(
+                Permission.VENDOR_PO_READ,
+                Permission.VENDOR_INVOICE_CREATE,
+                Permission.VENDOR_FINANCE_READ,
+                Permission.VENDOR_DISCOUNT_ACCEPT,
+                Permission.VENDOR_RECON_APPROVE
+        ));
+
+        // ── VENDOR_OPERATIONS ─────────────────────────────────────────────────
+        // Vendor Warehouse / Dispatch specialist. Acknowledges orders and issues ASNs.
+        map.put(RoleType.VENDOR_OPERATIONS, EnumSet.of(
+                Permission.VENDOR_PO_READ,
+                Permission.VENDOR_PO_ACK,
+                Permission.VENDOR_ASN_DISPATCH
+        ));
+
         ROLE_PERMISSIONS = Collections.unmodifiableMap(map);
     }
 

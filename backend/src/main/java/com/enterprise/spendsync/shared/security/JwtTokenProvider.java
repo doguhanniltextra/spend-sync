@@ -120,6 +120,31 @@ public class JwtTokenProvider {
     }
 
     /**
+     * Generates a signed JWT Access Token for an external Vendor User.
+     */
+    public String generateVendorAccessToken(com.enterprise.spendsync.vendorportal.internal.domain.VendorUser vendorUser) {
+        Instant now = Instant.now();
+        Instant expiry = now.plus(accessTokenExpirySeconds, ChronoUnit.SECONDS);
+
+        List<String> roleNames = List.of(vendorUser.getRole().name());
+        String tenantIdStr = vendorUser.getTenant() != null ? vendorUser.getTenant().getId().toString() : null;
+        String vendorIdStr = vendorUser.getVendor() != null ? vendorUser.getVendor().getId().toString() : null;
+
+        return Jwts.builder()
+                .subject(vendorUser.getId().toString())
+                .claim("email", vendorUser.getEmail())
+                .claim("fullName", vendorUser.getFullName())
+                .claim("tenantId", tenantIdStr)
+                .claim("vendorId", vendorIdStr)
+                .claim("userType", "VENDOR")
+                .claim("roles", roleNames)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(key)
+                .compact();
+    }
+
+    /**
      * Builds Spring Security Authentication object directly from JWT claims without hitting DB.
      */
     public Authentication getAuthentication(String token) {
@@ -130,6 +155,9 @@ public class JwtTokenProvider {
         String fullName = claims.get("fullName", String.class);
         String tenantIdStr = claims.get("tenantId", String.class);
         UUID tenantId = tenantIdStr != null ? UUID.fromString(tenantIdStr) : null;
+        String vendorIdStr = claims.get("vendorId", String.class);
+        UUID vendorId = vendorIdStr != null ? UUID.fromString(vendorIdStr) : null;
+        String userType = claims.get("userType", String.class);
 
         @SuppressWarnings("unchecked")
         List<String> roleNames = claims.get("roles", List.class);
@@ -142,6 +170,8 @@ public class JwtTokenProvider {
         UserPrincipal principal = new UserPrincipal(
                 userId,
                 tenantId,
+                vendorId,
+                userType != null ? userType : "USER",
                 email,
                 null,
                 fullName,

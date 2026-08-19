@@ -21,7 +21,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const accessToken = useAuthStore.getState().accessToken
-    const tenantId = useTenantStore.getState().tenantId
+    const tenantId = useTenantStore.getState().tenantId || useAuthStore.getState().user?.tenantId
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`

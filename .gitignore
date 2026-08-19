@@ -67,3 +67,4 @@ logs/
 **/logs/
 postgres_data/
 kafka_data/
+scratch/

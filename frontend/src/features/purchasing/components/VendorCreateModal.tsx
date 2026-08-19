@@ -106,7 +106,7 @@ export function VendorCreateModal({ isOpen, onClose }: VendorCreateModalProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label={PURCHASING_COPY.onboardModal.nameLabel}
-            placeholder="e.g. AWS EMEA SARL or Koç Sistem A.Ş."
+            placeholder="e.g. AWS EMEA SARL or Acme Tech Corp"
             error={errors.name?.message}
             required
             {...register('name')}
@@ -114,7 +114,7 @@ export function VendorCreateModal({ isOpen, onClose }: VendorCreateModalProps) {
 
           <Input
             label={PURCHASING_COPY.onboardModal.taxNumberLabel}
-            placeholder="10-digit VKN or VAT number"
+            placeholder="10-digit tax number or VAT ID"
             error={errors.taxNumber?.message}
             required
             {...register('taxNumber')}
@@ -124,7 +124,7 @@ export function VendorCreateModal({ isOpen, onClose }: VendorCreateModalProps) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input
             label={PURCHASING_COPY.onboardModal.taxOfficeLabel}
-            placeholder="e.g. Büyük Mükellefler"
+            placeholder="e.g. Central Tax Office"
             error={errors.taxOffice?.message}
             required
             {...register('taxOffice')}
@@ -205,7 +205,7 @@ export function VendorCreateModal({ isOpen, onClose }: VendorCreateModalProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label={PURCHASING_COPY.onboardModal.bankNameLabel}
-            placeholder="Bank Name (e.g. İş Bankası, Garanti)"
+            placeholder="Bank Name (e.g. JPMorgan, Barclays, HSBC)"
             {...register('bankName')}
           />
 

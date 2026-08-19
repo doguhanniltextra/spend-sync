@@ -28,6 +28,7 @@ public class TenantFilter extends OncePerRequestFilter {
 
     private static final List<String> PUBLIC_PATH_PATTERNS = List.of(
             Endpoints.Auth.BASE + "/**",
+            Endpoints.VendorPortal.AUTH_BASE + "/**",
             Endpoints.Organization.BASE + Endpoints.Organization.CREATE_COMPANY,
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -62,9 +63,18 @@ public class TenantFilter extends OncePerRequestFilter {
                             "The '" + TENANT_HEADER + "' header must be a valid UUID.");
                     return;
                 }
+            } else {
+                // Fallback: Check if UserPrincipal in SecurityContext contains tenantId
+                org.springframework.security.core.Authentication authentication =
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.getPrincipal() instanceof com.enterprise.spendsync.shared.security.UserPrincipal principal) {
+                    if (principal.getTenantId() != null) {
+                        TenantContext.setTenantId(principal.getTenantId());
+                    }
+                }
             }
 
-            // Proceed through the chain (JwtAuthenticationFilter executes if before or in chain)
+            // Proceed through the chain
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();

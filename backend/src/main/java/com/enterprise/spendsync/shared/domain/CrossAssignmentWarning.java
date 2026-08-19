@@ -40,8 +40,8 @@ public record CrossAssignmentWarning(
             String facilityName
     ) {
         String message = String.format(
-                "DİKKAT: Teslimat noktası '%s' (%s), harcama sahibi '%s' tüzel kişiliğinden farklı bir şirkete aittir. " +
-                "Fatura ve muhasebe kaydının '%s' adına düzenlendiğini teyit ediniz.",
+                "WARNING: Delivery facility '%s' (%s) belongs to a different company than the purchasing legal entity '%s'. " +
+                "Please verify that the invoice and accounting entries are issued on behalf of '%s'.",
                 facilityName,
                 targetFacilityLegalEntityName,
                 sourceLegalEntityName,

@@ -92,6 +92,10 @@ public final class Endpoints {
         public static final String VENDORS_BASE = BASE + "/vendors";
         public static final String VENDOR_BY_ID = "/{id}";
         public static final String VENDOR_STATUS = "/{id}/status";
+        public static final String VENDOR_INVITE = "/invite";
+        public static final String BANK_CHANGE_REQUESTS = "/bank-change-requests";
+        public static final String BANK_CHANGE_APPROVE = "/bank-change-requests/{id}/approve";
+        public static final String BANK_CHANGE_REJECT = "/bank-change-requests/{id}/reject";
 
         // Purchase Orders
         public static final String ORDERS_BASE = BASE + "/orders";
@@ -134,5 +138,74 @@ public final class Endpoints {
         public static final String BATCH_BY_ID = "/batches/{id}";
         public static final String APPROVE_BATCH = "/batches/{id}/approve";
         public static final String CANCEL_BATCH = "/batches/{id}/cancel";
+    }
+
+    public static final class Intelligence {
+        public static final String BASE = API_V1 + "/intelligence";
+        public static final String PULSE = "/pulse";
+        public static final String ASK = "/ask";
+        public static final String BUDGET_RUNWAY = "/budget-runway";
+        public static final String SAVINGS_OPPORTUNITIES = "/savings-opportunities";
+        public static final String WHAT_IF_SIMULATE = "/what-if-simulate";
+    }
+
+    public static final class Catalog {
+        public static final String BASE = API_V1 + "/catalog";
+        public static final String SEARCH = "/search";
+        public static final String CATEGORIES = "/categories";
+        public static final String ITEM_BY_ID = "/items/{id}";
+        public static final String AUTOFILL = "/items/{id}/autofill";
+        public static final String HEALTH = "/health";
+    }
+
+    public static final class AdminCatalog {
+        public static final String BASE = API_V1 + "/admin/catalog";
+        public static final String ITEMS = "/items";
+        public static final String ITEM_BY_ID = "/items/{id}";
+        public static final String CATEGORIES = "/categories";
+        public static final String IMPORT = "/import";
+        public static final String EXPORT = "/export";
+    }
+
+    public static final class Analytics {
+        public static final String BASE = API_V1 + "/analytics";
+        public static final String CFO_DECK = "/cfo-deck";
+    }
+
+    public static final class VendorPortal {
+        public static final String BASE = API_V1 + "/vendor-portal";
+        public static final String AUTH_BASE = BASE + "/auth";
+        public static final String INVITE_DETAILS = "/invite/{token}";
+        public static final String ACCEPT_INVITE = "/accept-invite";
+        public static final String LOGIN = "/login";
+        public static final String PROFILE_BASE = BASE + "/profile";
+        public static final String BANK_CHANGE_REQUEST = "/bank-change-request";
+
+        // Purchase Orders & ASN / e-Waybill
+        public static final String ORDERS_BASE = BASE + "/orders";
+        public static final String ORDER_BY_ID = "/{id}";
+        public static final String ORDER_ACKNOWLEDGE = "/{id}/acknowledge";
+        public static final String ORDER_DISPATCH = "/{id}/dispatch";
+        public static final String ORDER_ASNS = "/{id}/asns";
+
+        // Electronic Invoicing (PO-Flip, UBL-TR XML & HTML Render)
+        public static final String INVOICES_BASE = BASE + "/invoices";
+        public static final String INVOICE_BY_ID = "/{id}";
+        public static final String INVOICE_PO_FLIP = "/po-flip/{poId}";
+        public static final String INVOICE_UPLOAD_UBL = "/upload-ubl";
+        public static final String INVOICE_HTML = "/{id}/html";
+        public static final String INVOICE_PAYMENT_STATUS = "/{id}/payment-status";
+        public static final String INVOICE_ACCEPT_EARLY_DISCOUNT = "/{id}/accept-early-discount";
+
+        // Vendor Finance, SOA & BA-BS e-Reconciliation
+        public static final String FINANCE_BASE = BASE + "/finance";
+        public static final String EARLY_PAY_OFFERS = "/early-payment-offers";
+        public static final String SOA = "/statement-of-accounts";
+        public static final String RECONCILIATION = "/reconciliation";
+        public static final String RECONCILIATION_APPROVE = "/reconciliation/approve";
+
+        // Vendor Catalog Proposals
+        public static final String CATALOG_BASE = BASE + "/catalog";
+        public static final String CATALOG_PROPOSALS = "/proposals";
     }
 }

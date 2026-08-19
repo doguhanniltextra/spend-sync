@@ -122,5 +122,51 @@ public enum Permission {
     /**
      * View immutable audit trail and ISO compliance logs.
      */
-    AUDIT_READ
+    AUDIT_READ,
+
+    // ── Vendor Portal (B2B Self-Service) ─────────────────────────────────
+    /**
+     * Manage vendor users and company profile.
+     */
+    VENDOR_USER_MANAGE,
+
+    /**
+     * Submit and manage bank account change requests.
+     */
+    VENDOR_BANK_MANAGE,
+
+    /**
+     * View purchase orders issued to this vendor.
+     */
+    VENDOR_PO_READ,
+
+    /**
+     * Acknowledge, accept or reject purchase orders.
+     */
+    VENDOR_PO_ACK,
+
+    /**
+     * Submit Advanced Shipping Notices (ASN) and e-Waybill dispatch.
+     */
+    VENDOR_ASN_DISPATCH,
+
+    /**
+     * Create invoices via PO-Flip or upload e-Invoice XML (UBL-TR).
+     */
+    VENDOR_INVOICE_CREATE,
+
+    /**
+     * View payment statuses, maturity schedule and statement of accounts.
+     */
+    VENDOR_FINANCE_READ,
+
+    /**
+     * Accept dynamic early payment discounting offers.
+     */
+    VENDOR_DISCOUNT_ACCEPT,
+
+    /**
+     * Approve monthly BA-BS e-reconciliations.
+     */
+    VENDOR_RECON_APPROVE
 }
