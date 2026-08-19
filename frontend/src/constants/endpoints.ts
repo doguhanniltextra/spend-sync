@@ -1,0 +1,93 @@
+/**
+ * All backend API endpoint path templates.
+ * Maps 1-to-1 with backend Endpoints.java constants.
+ * Never use raw strings in service layer — always use this object.
+ */
+export const ENDPOINTS = {
+  auth: {
+    login:                    '/auth/login',
+    register:                 '/auth/register-user',
+    refresh:                  '/auth/refresh',
+    logout:                   '/auth/logout',
+    userById:   (id: string)  => `/auth/users/${id}`,
+  },
+  organization: {
+    context:                  '/organization/current-context',
+    legalEntities:            '/organization/legal-entities',
+    legalEntityById: (id: string) => `/organization/legal-entities/${id}`,
+    legalEntityStatus: (id: string) => `/organization/legal-entities/${id}/status`,
+    costCenters:              '/organization/cost-centers',
+    costCenterById: (id: string) => `/organization/cost-centers/${id}`,
+    costCenterStatus: (id: string) => `/organization/cost-centers/${id}/status`,
+    facilities:               '/organization/facilities',
+    facilityById: (id: string) => `/organization/facilities/${id}`,
+    facilityStatus: (id: string) => `/organization/facilities/${id}/status`,
+    users:                    '/organization/users',
+    userById: (id: string)    => `/organization/users/${id}`,
+    userRoles: (id: string)   => `/organization/users/${id}/roles`,
+    userLegalEntities: (id: string) => `/organization/users/${id}/legal-entities`,
+    userStatus: (id: string)  => `/organization/users/${id}/status`,
+    inviteSubAccount:         '/organization/invitations/sub-account',
+    generateRequisitionerLink:'/organization/invitations/requisitioner-link',
+    invitations:              '/organization/invitations',
+    invitationById: (id: string) => `/organization/invitations/${id}`,
+  },
+  budget: {
+    pools:                    '/budget/pools',
+    poolById: (id: string)    => `/budget/pools/${id}`,
+    poolStatus: (id: string)  => `/budget/pools/${id}/status`,
+    poolAdjust: (id: string)  => `/budget/pools/${id}/adjust`,
+    poolTransactions: (id: string) => `/budget/pools/${id}/transactions`,
+    summary:                  '/budget/summary',
+    transfers:                '/budget/transfers',
+  },
+  requisitions: {
+    list:                     '/requisitions',
+    my:                       '/requisitions/my-requisitions',
+    byId: (id: string)        => `/requisitions/${id}`,
+    pendingApprovals:         '/requisitions/pending-approvals',
+    approve: (id: string)     => `/requisitions/${id}/approve`,
+    reject:  (id: string)     => `/requisitions/${id}/reject`,
+    cancel:  (id: string)     => `/requisitions/${id}/cancel`,
+    approvalLimits:           '/requisitions/approval-limits',
+    approvalLimitStatus: (id: string) => `/requisitions/approval-limits/${id}/status`,
+    effectiveLimit:           '/requisitions/approval-limits/effective',
+  },
+  purchasing: {
+    vendors:                  '/purchasing/vendors',
+    vendorById: (id: string)  => `/purchasing/vendors/${id}`,
+    vendorStatus: (id: string) => `/purchasing/vendors/${id}/status`,
+    orders:                   '/purchasing/orders',
+    orderById: (id: string)   => `/purchasing/orders/${id}`,
+    orderIssue: (id: string)  => `/purchasing/orders/${id}/issue`,
+    orderRevise: (id: string) => `/purchasing/orders/${id}/revise`,
+    orderCancel: (id: string) => `/purchasing/orders/${id}/cancel`,
+  },
+  receiving: {
+    receipts:                 '/receiving/receipts',
+    receiptById: (id: string) => `/receiving/receipts/${id}`,
+    receiptsByPo: (poId: string) => `/receiving/orders/${poId}/receipts`,
+    pendingOrders:            '/receiving/pending-orders',
+  },
+  matching: {
+    invoices:                 '/matching/invoices',
+    invoiceById: (id: string) => `/matching/invoices/${id}`,
+    invoicesByPo: (poId: string) => `/matching/invoices/by-po/${poId}`,
+    override: (id: string)    => `/matching/invoices/${id}/override`,
+    reject: (id: string)      => `/matching/invoices/${id}/reject`,
+  },
+  payment: {
+    dueInvoices:              '/payments/invoices/due',
+    batches:                  '/payments/batches',
+    batchById: (id: string)   => `/payments/batches/${id}`,
+    approveBatch: (id: string) => `/payments/batches/${id}/approve`,
+    cancelBatch: (id: string)  => `/payments/batches/${id}/cancel`,
+  },
+  audit: {
+    logs:                     '/audit/logs',
+    timeline: (entityType: string, entityId: string) =>
+      `/audit/logs/timeline/${entityType}/${entityId}`,
+    correlation: (correlationId: string) => `/audit/logs/correlation/${correlationId}`,
+    violations:               '/audit/violations',
+  },
+} as const
