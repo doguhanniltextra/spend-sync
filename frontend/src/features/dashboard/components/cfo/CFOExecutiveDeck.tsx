@@ -2,7 +2,6 @@ import { SpendDistributionDonut } from './SpendDistributionDonut'
 import { CashFlowForecastChart } from './CashFlowForecastChart'
 import { FacilityLogisticsHeatmap } from './FacilityLogisticsHeatmap'
 import { VendorConcentrationRisk } from './VendorConcentrationRisk'
-import { SmartFinancialSignals } from './SmartFinancialSignals'
 import type { BudgetPoolResponse } from '@/types/budget.types'
 
 interface CFOExecutiveDeckProps {
@@ -20,10 +19,7 @@ export function CFOExecutiveDeck({
 }: CFOExecutiveDeckProps) {
   return (
     <div className="space-y-5">
-      {/* 1. Autonomous AI Financial Signals */}
-      <SmartFinancialSignals />
-
-      {/* 2. Top Charts Row: Donut Spend Distribution & 12-Month Burn Rate */}
+      {/* 1. Top Charts Row: Donut Spend Distribution & 12-Month Burn Rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <SpendDistributionDonut pools={pools} />
         <CashFlowForecastChart
