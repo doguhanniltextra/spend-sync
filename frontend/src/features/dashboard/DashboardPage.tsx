@@ -3,6 +3,7 @@ import { useDashboardData } from './hooks/useDashboardData'
 import { useAuthStore } from '@/store/useAuthStore'
 import { MetricStatCard } from './components/MetricStatCard'
 import { ExecutiveActionCards } from './components/ExecutiveActionCards'
+import { CFOExecutiveDeck } from './components/cfo/CFOExecutiveDeck'
 import { BudgetUtilizationList } from './components/BudgetUtilizationList'
 import { PendingApprovalsList } from './components/PendingApprovalsList'
 import { MyRequisitionsList } from './components/MyRequisitionsList'
@@ -137,6 +138,18 @@ export default function DashboardPage() {
         dueInvoices={dueInvoices}
         allInvoices={allInvoices}
       />
+
+      {/* CFO / Executive Visual Analytics Deck */}
+      {(user?.roles?.includes('ROOT_USER') ||
+        user?.roles?.includes('ROLE_ROOT_USER') ||
+        user?.email === 'cfo@spendsync.com') && (
+        <CFOExecutiveDeck
+          pools={budgetSummary?.pools ?? []}
+          totalAllocated={totalAllocated}
+          totalSpent={budgetSummary?.totalSpent || 0}
+          totalReserved={budgetSummary?.totalReserved || 0}
+        />
+      )}
 
       {/* Main Content Grid: Ledger & Approvals */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
