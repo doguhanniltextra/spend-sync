@@ -13,6 +13,8 @@ public interface GoodsReceiptService {
 
     GoodsReceiptResponse getGoodsReceiptById(UUID id);
 
+    List<GoodsReceiptResponse> getAllGoodsReceipts();
+
     List<GoodsReceiptResponse> getGoodsReceiptsByPurchaseOrder(UUID purchaseOrderId);
 
     List<PendingPOForReceivingResponse> getPendingOrdersForReceiving();

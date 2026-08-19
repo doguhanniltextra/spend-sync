@@ -13,20 +13,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 /**
- * Spring Security configuration.
- *
- * <p>Configures:
- * <ul>
- *   <li>BCrypt password hashing at strength 12 (ISO 27001 §A.9.4)</li>
- *   <li>Stateless session management (no HTTP session state)</li>
- *   <li>JwtAuthenticationFilter for JWT Bearer token resolution</li>
- *   <li>Multi-tenant context filter injected for Tenant isolation</li>
- *   <li>{@code @EnableMethodSecurity} — activates {@code @PreAuthorize} / {@code @PostAuthorize}
- *       on service and controller methods for RBAC enforcement</li>
- * </ul>
- * </p>
+ * Spring Security configuration with Full CORS and RBAC support.
  */
 @Configuration
 @EnableWebSecurity
@@ -47,16 +41,31 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Tenant-Id", "Accept", "Origin", "X-Requested-With"));
+        config.setExposedHeaders(List.of("Authorization", "X-Tenant-Id"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(Endpoints.Auth.BASE + "/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .anyRequest().permitAll() // Granular RBAC enforced via @PreAuthorize at service/controller level
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(tenantFilter, JwtAuthenticationFilter.class);

@@ -248,6 +248,16 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<GoodsReceiptResponse> getAllGoodsReceipts() {
+        UUID tenantId = TenantContext.getRequiredTenantId();
+        return goodsReceiptRepository.findAllByTenantIdOrderByCreatedAtDesc(tenantId)
+                .stream()
+                .map(GoodsReceiptResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<GoodsReceiptResponse> getGoodsReceiptsByPurchaseOrder(UUID purchaseOrderId) {
         UUID tenantId = TenantContext.getRequiredTenantId();
         return goodsReceiptRepository.findAllByTenantIdAndPurchaseOrderIdOrderByCreatedAtDesc(tenantId, purchaseOrderId)

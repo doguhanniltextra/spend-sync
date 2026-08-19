@@ -36,6 +36,12 @@ public class GoodsReceiptController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping(Endpoints.Receiving.RECEIPTS)
+    @PreAuthorize("hasAnyAuthority('PERM_GR_READ', 'PERM_PO_READ', 'PERM_INVOICE_READ')")
+    public ResponseEntity<List<GoodsReceiptResponse>> getAllGoodsReceipts() {
+        return ResponseEntity.ok(goodsReceiptService.getAllGoodsReceipts());
+    }
+
     @GetMapping(Endpoints.Receiving.RECEIPT_BY_ID)
     @PreAuthorize("hasAnyAuthority('PERM_GR_READ', 'PERM_PO_READ', 'PERM_INVOICE_READ')")
     public ResponseEntity<GoodsReceiptResponse> getGoodsReceiptById(@PathVariable UUID id) {
