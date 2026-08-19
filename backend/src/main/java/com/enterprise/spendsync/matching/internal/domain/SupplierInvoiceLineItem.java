@@ -58,17 +58,26 @@ public class SupplierInvoiceLineItem {
     private BigDecimal unitPrice;
 
     @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
-    private BigDecimal taxRate = BigDecimal.valueOf(20.00);
+    private BigDecimal taxRate;
 
     @Column(name = "tax_amount", nullable = false, precision = 18, scale = 4)
     private BigDecimal taxAmount;
 
+    @Column(name = "tevkifat_code", length = 20)
+    private String tevkifatCode;
+
+    @Column(name = "tevkifat_rate", length = 20)
+    private String tevkifatRate;
+
+    @Column(name = "tevkifat_amount", precision = 18, scale = 4)
+    private BigDecimal tevkifatAmount = BigDecimal.ZERO;
+
     @Column(name = "line_total", nullable = false, precision = 18, scale = 4)
-    private BigDecimal lineTotal;
+    private BigDecimal lineTotalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "match_status", nullable = false, length = 50)
-    private InvoiceMatchStatus matchStatus = InvoiceMatchStatus.EVALUATING;
+    private InvoiceMatchStatus matchStatus = InvoiceMatchStatus.AUTO_MATCHED;
 
     @Column(name = "variance_reason", columnDefinition = "TEXT")
     private String varianceReason;
@@ -80,22 +89,38 @@ public class SupplierInvoiceLineItem {
     }
 
     public SupplierInvoiceLineItem(Tenant tenant,
-                                   PurchaseOrderLineItem purchaseOrderLineItem,
-                                   GoodsReceiptLineItem goodsReceiptLineItem,
-                                   BigDecimal invoicedQuantity,
-                                   BigDecimal unitPrice,
-                                   BigDecimal taxRate,
-                                   BigDecimal taxAmount,
-                                   BigDecimal lineTotal) {
+                                  PurchaseOrderLineItem purchaseOrderLineItem,
+                                  GoodsReceiptLineItem goodsReceiptLineItem,
+                                  BigDecimal invoicedQuantity,
+                                  BigDecimal unitPrice,
+                                  BigDecimal taxRate,
+                                  BigDecimal taxAmount,
+                                  BigDecimal lineTotalAmount) {
+        this(tenant, purchaseOrderLineItem, goodsReceiptLineItem, invoicedQuantity, unitPrice, taxRate, taxAmount, null, null, BigDecimal.ZERO, lineTotalAmount);
+    }
+
+    public SupplierInvoiceLineItem(Tenant tenant,
+                                  PurchaseOrderLineItem purchaseOrderLineItem,
+                                  GoodsReceiptLineItem goodsReceiptLineItem,
+                                  BigDecimal invoicedQuantity,
+                                  BigDecimal unitPrice,
+                                  BigDecimal taxRate,
+                                  BigDecimal taxAmount,
+                                  String tevkifatCode,
+                                  String tevkifatRate,
+                                  BigDecimal tevkifatAmount,
+                                  BigDecimal lineTotalAmount) {
         this.tenant = tenant;
         this.purchaseOrderLineItem = purchaseOrderLineItem;
         this.goodsReceiptLineItem = goodsReceiptLineItem;
         this.invoicedQuantity = invoicedQuantity;
         this.unitPrice = unitPrice;
-        this.taxRate = taxRate != null ? taxRate : BigDecimal.valueOf(20.00);
+        this.taxRate = taxRate;
         this.taxAmount = taxAmount;
-        this.lineTotal = lineTotal;
-        this.matchStatus = InvoiceMatchStatus.EVALUATING;
+        this.tevkifatCode = tevkifatCode;
+        this.tevkifatRate = tevkifatRate;
+        this.tevkifatAmount = tevkifatAmount != null ? tevkifatAmount : BigDecimal.ZERO;
+        this.lineTotalAmount = lineTotalAmount;
     }
 
     @PrePersist
@@ -103,7 +128,6 @@ public class SupplierInvoiceLineItem {
         this.createdAt = Instant.now();
     }
 
-    // Getters & Setters
     public UUID getId() { return id; }
     public Tenant getTenant() { return tenant; }
     public SupplierInvoice getSupplierInvoice() { return supplierInvoice; }
@@ -115,7 +139,11 @@ public class SupplierInvoiceLineItem {
     public BigDecimal getUnitPrice() { return unitPrice; }
     public BigDecimal getTaxRate() { return taxRate; }
     public BigDecimal getTaxAmount() { return taxAmount; }
-    public BigDecimal getLineTotal() { return lineTotal; }
+    public String getTevkifatCode() { return tevkifatCode; }
+    public String getTevkifatRate() { return tevkifatRate; }
+    public BigDecimal getTevkifatAmount() { return tevkifatAmount; }
+    public BigDecimal getLineTotalAmount() { return lineTotalAmount; }
+    public BigDecimal getLineTotal() { return lineTotalAmount; }
     public InvoiceMatchStatus getMatchStatus() { return matchStatus; }
     public void setMatchStatus(InvoiceMatchStatus matchStatus) { this.matchStatus = matchStatus; }
     public String getVarianceReason() { return varianceReason; }

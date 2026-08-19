@@ -20,4 +20,14 @@ public interface SupplierInvoiceRepository extends JpaRepository<SupplierInvoice
     List<SupplierInvoice> findAllByTenantIdAndPurchaseOrderIdOrderByCreatedAtDesc(UUID tenantId, UUID purchaseOrderId);
 
     List<SupplierInvoice> findAllByTenantIdOrderByCreatedAtDesc(UUID tenantId);
+
+    List<SupplierInvoice> findAllByTenantIdAndVendorIdOrderByCreatedAtDesc(UUID tenantId, UUID vendorId);
+
+    List<SupplierInvoice> findAllByTenantIdAndVendorIdAndStatusOrderByCreatedAtDesc(UUID tenantId, UUID vendorId, com.enterprise.spendsync.matching.internal.domain.InvoiceStatus status);
+
+    Optional<SupplierInvoice> findByIdAndTenantIdAndVendorId(UUID id, UUID tenantId, UUID vendorId);
+
+    boolean existsByTenantIdAndEttn(UUID tenantId, String ettn);
+
+    boolean existsByTenantIdAndVendorIdAndInvoiceNumber(UUID tenantId, UUID vendorId, String invoiceNumber);
 }

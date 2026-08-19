@@ -6,8 +6,10 @@ import com.enterprise.spendsync.core.internal.domain.Tenant;
 import com.enterprise.spendsync.core.internal.domain.User;
 import com.enterprise.spendsync.purchasing.internal.domain.PurchaseOrder;
 import com.enterprise.spendsync.purchasing.internal.domain.Vendor;
+import com.enterprise.spendsync.shared.crypto.EncryptedStringConverter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -40,7 +42,8 @@ import java.util.UUID;
         },
         indexes = {
                 @Index(name = "idx_supplier_invoices_po", columnList = "purchase_order_id"),
-                @Index(name = "idx_supplier_invoices_tenant_created", columnList = "tenant_id, created_at DESC")
+                @Index(name = "idx_supplier_invoices_tenant_created", columnList = "tenant_id, created_at DESC"),
+                @Index(name = "idx_supplier_invoices_vendor", columnList = "tenant_id, vendor_id")
         }
 )
 public class SupplierInvoice {
@@ -61,6 +64,9 @@ public class SupplierInvoice {
 
     @Column(name = "invoice_date", nullable = false)
     private LocalDate invoiceDate;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "invoice_type", nullable = false, length = 50)
@@ -89,14 +95,27 @@ public class SupplierInvoice {
     @Column(name = "currency", nullable = false, length = 10)
     private String currency;
 
+    @Column(name = "exchange_rate", precision = 15, scale = 6)
+    private BigDecimal exchangeRate = BigDecimal.ONE;
+
     @Column(name = "subtotal_amount", nullable = false, precision = 18, scale = 4)
     private BigDecimal subtotalAmount;
 
     @Column(name = "tax_amount", nullable = false, precision = 18, scale = 4)
     private BigDecimal taxAmount;
 
+    @Column(name = "withholding_tax_amount", precision = 18, scale = 4)
+    private BigDecimal withholdingTaxAmount = BigDecimal.ZERO;
+
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 4)
     private BigDecimal totalAmount;
+
+    @Column(name = "payable_amount", precision = 18, scale = 4)
+    private BigDecimal payableAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "match_type", nullable = false, length = 50)
+    private MatchType matchType = MatchType.THREE_WAY;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "match_status", nullable = false, length = 50)
@@ -109,6 +128,9 @@ public class SupplierInvoice {
     @Column(name = "discrepancy_reason", columnDefinition = "TEXT")
     private String discrepancyReason;
 
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "manager_override_note", columnDefinition = "TEXT")
     private String managerOverrideNote;
 
@@ -116,8 +138,15 @@ public class SupplierInvoice {
     @JoinColumn(name = "manager_override_by_user_id")
     private User managerOverrideByUser;
 
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "raw_ubl_xml", columnDefinition = "TEXT")
+    private String rawUblXml;
+
     @OneToMany(mappedBy = "supplierInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SupplierInvoiceLineItem> lineItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "supplierInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InvoiceDiscrepancy> discrepancies = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -142,6 +171,27 @@ public class SupplierInvoice {
                            BigDecimal subtotalAmount,
                            BigDecimal taxAmount,
                            BigDecimal totalAmount) {
+        this(tenant, invoiceNumber, ettn, invoiceDate, invoiceType, invoiceProfile, purchaseOrder, vendor,
+                legalEntity, costCenter, currency, subtotalAmount, taxAmount, BigDecimal.ZERO, totalAmount, totalAmount, MatchType.THREE_WAY);
+    }
+
+    public SupplierInvoice(Tenant tenant,
+                           String invoiceNumber,
+                           String ettn,
+                           LocalDate invoiceDate,
+                           InvoiceType invoiceType,
+                           InvoiceProfile invoiceProfile,
+                           PurchaseOrder purchaseOrder,
+                           Vendor vendor,
+                           LegalEntity legalEntity,
+                           CostCenter costCenter,
+                           String currency,
+                           BigDecimal subtotalAmount,
+                           BigDecimal taxAmount,
+                           BigDecimal withholdingTaxAmount,
+                           BigDecimal totalAmount,
+                           BigDecimal payableAmount,
+                           MatchType matchType) {
         this.tenant = tenant;
         this.invoiceNumber = invoiceNumber;
         this.ettn = ettn;
@@ -155,7 +205,10 @@ public class SupplierInvoice {
         this.currency = currency;
         this.subtotalAmount = subtotalAmount;
         this.taxAmount = taxAmount;
+        this.withholdingTaxAmount = withholdingTaxAmount != null ? withholdingTaxAmount : BigDecimal.ZERO;
         this.totalAmount = totalAmount;
+        this.payableAmount = payableAmount != null ? payableAmount : totalAmount.subtract(this.withholdingTaxAmount);
+        this.matchType = matchType != null ? matchType : MatchType.THREE_WAY;
         this.matchStatus = InvoiceMatchStatus.EVALUATING;
         this.status = InvoiceStatus.SUBMITTED;
     }
@@ -176,12 +229,18 @@ public class SupplierInvoice {
         item.setSupplierInvoice(this);
     }
 
+    public void addDiscrepancy(InvoiceDiscrepancy discrepancy) {
+        discrepancies.add(discrepancy);
+    }
+
     // Getters & Setters
     public UUID getId() { return id; }
     public Tenant getTenant() { return tenant; }
     public String getInvoiceNumber() { return invoiceNumber; }
     public String getEttn() { return ettn; }
     public LocalDate getInvoiceDate() { return invoiceDate; }
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public InvoiceType getInvoiceType() { return invoiceType; }
     public InvoiceProfile getInvoiceProfile() { return invoiceProfile; }
     public PurchaseOrder getPurchaseOrder() { return purchaseOrder; }
@@ -189,20 +248,32 @@ public class SupplierInvoice {
     public LegalEntity getLegalEntity() { return legalEntity; }
     public CostCenter getCostCenter() { return costCenter; }
     public String getCurrency() { return currency; }
+    public BigDecimal getExchangeRate() { return exchangeRate; }
+    public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
     public BigDecimal getSubtotalAmount() { return subtotalAmount; }
     public BigDecimal getTaxAmount() { return taxAmount; }
+    public BigDecimal getWithholdingTaxAmount() { return withholdingTaxAmount; }
     public BigDecimal getTotalAmount() { return totalAmount; }
+    public BigDecimal getPayableAmount() { return payableAmount != null ? payableAmount : totalAmount; }
+    public void setPayableAmount(BigDecimal payableAmount) { this.payableAmount = payableAmount; }
+    public MatchType getMatchType() { return matchType; }
+    public void setMatchType(MatchType matchType) { this.matchType = matchType; }
     public InvoiceMatchStatus getMatchStatus() { return matchStatus; }
     public void setMatchStatus(InvoiceMatchStatus matchStatus) { this.matchStatus = matchStatus; }
     public InvoiceStatus getStatus() { return status; }
     public void setStatus(InvoiceStatus status) { this.status = status; }
     public String getDiscrepancyReason() { return discrepancyReason; }
     public void setDiscrepancyReason(String discrepancyReason) { this.discrepancyReason = discrepancyReason; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public String getManagerOverrideNote() { return managerOverrideNote; }
     public void setManagerOverrideNote(String managerOverrideNote) { this.managerOverrideNote = managerOverrideNote; }
     public User getManagerOverrideByUser() { return managerOverrideByUser; }
     public void setManagerOverrideByUser(User managerOverrideByUser) { this.managerOverrideByUser = managerOverrideByUser; }
+    public String getRawUblXml() { return rawUblXml; }
+    public void setRawUblXml(String rawUblXml) { this.rawUblXml = rawUblXml; }
     public List<SupplierInvoiceLineItem> getLineItems() { return lineItems; }
+    public List<InvoiceDiscrepancy> getDiscrepancies() { return discrepancies; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

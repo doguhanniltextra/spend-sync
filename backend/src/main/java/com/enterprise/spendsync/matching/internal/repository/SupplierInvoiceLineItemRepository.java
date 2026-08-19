@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface SupplierInvoiceLineItemRepository extends JpaRepository<SupplierInvoiceLineItem, UUID> {
 
     List<SupplierInvoiceLineItem> findAllBySupplierInvoiceId(UUID supplierInvoiceId);
+
+    List<SupplierInvoiceLineItem> findAllByTenantIdAndPurchaseOrderLineItemId(UUID tenantId, UUID purchaseOrderLineItemId);
 }
