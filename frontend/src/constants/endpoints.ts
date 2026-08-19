@@ -67,7 +67,7 @@ export const ENDPOINTS = {
     receipts:                 '/receiving/receipts',
     receiptById: (id: string) => `/receiving/receipts/${id}`,
     receiptsByPo: (poId: string) => `/receiving/orders/${poId}/receipts`,
-    pendingOrders:            '/receiving/pending-orders',
+    pendingOrders:            '/receiving/orders/pending',
   },
   matching: {
     invoices:                 '/matching/invoices',
