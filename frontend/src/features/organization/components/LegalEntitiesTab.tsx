@@ -45,13 +45,13 @@ export function LegalEntitiesTab() {
         accessorKey: 'companyCode',
         header: ORG_COPY.legalEntity.code,
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700 font-mono font-bold text-xs shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-800 font-mono font-bold text-xs shrink-0 whitespace-nowrap">
               {row.original.companyCode}
-            </div>
-            <div>
+            </span>
+            <div className="min-w-0">
               <strong className="text-slate-900 block font-sans text-xs">{row.original.name}</strong>
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[10px] text-slate-400 font-mono block">
                 {row.original.registeredAddress}
               </span>
             </div>
