@@ -189,6 +189,7 @@ public class AuditLog {
 
     // Getters only (Immutable / Append-only)
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getCorrelationId() { return correlationId; }
     public AuditAction getAction() { return action; }

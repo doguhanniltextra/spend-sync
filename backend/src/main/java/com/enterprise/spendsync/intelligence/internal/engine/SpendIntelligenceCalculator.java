@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public final class SpendIntelligenceCalculator {
@@ -135,5 +137,94 @@ public final class SpendIntelligenceCalculator {
         long daysElapsed = ChronoUnit.DAYS.between(waybillDate, currentDate);
         int remaining = statutoryLimitDays - (int) daysElapsed;
         return Math.max(remaining, 0);
+    }
+
+    public record PriceAnomalyResult(
+            boolean isAnomaly,
+            BigDecimal variancePercentage,
+            String warningMessage
+    ) {}
+
+    /**
+     * Evaluates unit price anomaly against historical benchmark price (e.g. flags if > +50% above benchmark).
+     */
+    public static PriceAnomalyResult evaluatePriceAnomaly(
+            BigDecimal proposedUnitPrice,
+            BigDecimal benchmarkPrice,
+            BigDecimal anomalyThresholdPercent) {
+
+        if (proposedUnitPrice == null || benchmarkPrice == null || benchmarkPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return new PriceAnomalyResult(false, BigDecimal.ZERO, "Insufficient price baseline");
+        }
+
+        BigDecimal threshold = anomalyThresholdPercent != null ? anomalyThresholdPercent : new BigDecimal("50.00");
+        BigDecimal variance = proposedUnitPrice.subtract(benchmarkPrice)
+                .divide(benchmarkPrice, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        boolean isAnomaly = variance.compareTo(threshold) > 0;
+        String message = isAnomaly
+                ? String.format("PRICE ANOMALY DETECTED: Proposed unit price (%s) exceeds historical baseline (%s) by +%.1f%% (Threshold: +%.1f%%).",
+                proposedUnitPrice.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                benchmarkPrice.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                variance.doubleValue(),
+                threshold.doubleValue())
+                : String.format("Price within acceptable range (+%.1f%% variance).", variance.doubleValue());
+
+        return new PriceAnomalyResult(isAnomaly, variance, message);
+    }
+
+    public record DuplicateInvoiceRiskResult(
+            int riskScore,
+            boolean isHighRisk,
+            String riskLevel,
+            String analysis
+    ) {}
+
+    /**
+     * Evaluates duplicate invoice suspicion score (0 - 100).
+     */
+    public static DuplicateInvoiceRiskResult scoreDuplicateInvoiceRisk(
+            UUID vendorId1,
+            UUID vendorId2,
+            String invoiceNum1,
+            String invoiceNum2,
+            BigDecimal amount1,
+            BigDecimal amount2,
+            LocalDate date1,
+            LocalDate date2) {
+
+        int score = 0;
+        List<String> signals = new ArrayList<>();
+
+        if (vendorId1 != null && vendorId1.equals(vendorId2)) {
+            score += 30;
+            signals.add("Matching Vendor");
+        }
+
+        if (amount1 != null && amount2 != null && amount1.compareTo(amount2) == 0) {
+            score += 40;
+            signals.add("Identical Payable Amount (" + amount1.toPlainString() + ")");
+        }
+
+        if (invoiceNum1 != null && invoiceNum2 != null && invoiceNum1.trim().equalsIgnoreCase(invoiceNum2.trim())) {
+            score += 20;
+            signals.add("Identical Invoice Number (" + invoiceNum1 + ")");
+        }
+
+        if (date1 != null && date2 != null) {
+            long dayDiff = Math.abs(ChronoUnit.DAYS.between(date1, date2));
+            if (dayDiff <= 7) {
+                score += 10;
+                signals.add("Dates within " + dayDiff + " days");
+            }
+        }
+
+        boolean isHighRisk = score >= 70;
+        String level = score >= 90 ? "CRITICAL_DUPLICATE" : score >= 70 ? "HIGH_SUSPICION" : score >= 40 ? "MEDIUM_SUSPICION" : "LOW_RISK";
+        String analysis = String.join(", ", signals);
+
+        return new DuplicateInvoiceRiskResult(score, isHighRisk, level, analysis);
     }
 }
