@@ -5,7 +5,6 @@
 [![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
-[![Apache Kafka](https://img.shields.io/badge/Kafka-3.7-black.svg)](https://kafka.apache.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 SpendSync is a procurement and spend management application built with Spring Boot and React. It covers standard purchasing workflows: purchase requisitions, approval chains, purchase orders, goods receiving, 3-way invoice matching, payment batches, and a self-service vendor portal.
@@ -15,7 +14,7 @@ SpendSync is a procurement and spend management application built with Spring Bo
 <details open>
 <summary><h3>🏛️ System Architecture</h3></summary>
 
-The application is structured into modular domain packages within a Spring Boot backend, communicating through in-memory Spring Domain Events and an event broker.
+The application is structured into modular domain packages within a Spring Boot backend, communicating through in-memory Spring Domain Events (`ApplicationEventPublisher`).
 
 ```mermaid
 graph TB
@@ -42,16 +41,14 @@ graph TB
         EVENT_BUS["Domain Event Bus (ApplicationEventPublisher)"]
     end
 
-    subgraph Storage["Persistence & Messaging"]
+    subgraph Storage["Database"]
         DB[("PostgreSQL 16")]
-        KAFKA["Apache Kafka (Async Events)"]
     end
 
     Clients --> Security
     Security --> Monolith
     DomainModules <--> EVENT_BUS
     Monolith --> DB
-    EVENT_BUS -.-> KAFKA
 ```
 
 </details>
@@ -101,8 +98,9 @@ sequenceDiagram
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend Framework** | Java 21, Spring Boot 3.3.0, Spring Data JPA, Spring Security |
-| **Persistence & Messaging** | PostgreSQL 16, Hibernate 6, HikariCP, Apache Kafka 3.7 |
+| **Persistence** | PostgreSQL 16, Hibernate 6, HikariCP |
 | **Security & Auth** | JWT, BCrypt, Role-Based Access Control |
+| **Events** | Spring Domain Events (`ApplicationEventPublisher`) |
 | **API & Documentation** | SpringDoc OpenAPI 2.5, Swagger UI, Bean Validation |
 | **Frontend Framework** | React 18.3, TypeScript 5.5, Vite 5.4 |
 | **State & Styling** | TanStack React Query v5, Zustand, TailwindCSS, Lucide Icons, Axios |
@@ -120,7 +118,7 @@ sequenceDiagram
 - Node.js 18+
 - Docker & Docker Compose
 
-#### 1. Start Infrastructure (PostgreSQL & Kafka)
+#### 1. Start Database (PostgreSQL)
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
