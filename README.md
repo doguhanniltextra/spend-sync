@@ -20,46 +20,46 @@ The application is structured as a hardened Modular Monolith. It integrates **Po
 
 ```mermaid
 graph TB
-    subgraph Clients["Clients & Tools"]
-        SPA["Web Application (React / Vite :5173)"]
+    subgraph Clients["🌐 Clients & Tools"]
+        SPA["React SPA (:5173)"]
         VP["Vendor Portal"]
         INSIGHT["RedisInsight GUI (:5540)"]
     end
 
-    subgraph Security["Security & Interceptor Layer"]
-        TF["TenantFilter (Multi-Tenancy Context)"]
-        AUTH["JwtAuthenticationFilter (RBAC & Blacklist)"]
-        RATE["RateLimitAspect (Redis Sliding Window)"]
+    subgraph Security["🔒 Security & Interceptor Layer"]
+        TF["TenantFilter"]
+        AUTH["JwtAuthenticationFilter"]
+        RATE["Redis RateLimiter"]
     end
 
-    subgraph Monolith["SpendSync Core Engine (Java 21 / Spring Boot 3.3)"]
-        subgraph DomainModules["Application Modules"]
-            M_CORE["core<br/><small>Tenants, Legal Entities, Users</small>"]
-            M_BGT["budget & requisition<br/><small>Budget Pools, PR Approvals</small>"]
-            M_CAT["catalog & purchasing<br/><small>Item Master, PO Lifecycle</small>"]
-            M_RCV["receiving & matching<br/><small>Goods Receipts, 3-Way Match</small>"]
-            M_PAY["payment & vendorportal<br/><small>Payment Runs, Vendor Portal</small>"]
-            M_GOV["audit & analytics<br/><small>Audit Logs, Analytics</small>"]
+    subgraph Monolith["⚙️ SpendSync Core Engine (Spring Boot 3.3 / Java 21)"]
+        subgraph DomainModules["Domain Modules"]
+            direction TB
+            M_CORE["Core (Tenants / Users)"]
+            M_BGT["Budget & Requisitions"]
+            M_CAT["Catalog & Purchasing"]
+            M_RCV["Receiving & 3-Way Match"]
+            M_PAY["Payment & Invoices"]
+            M_GOV["Audit & Analytics"]
         end
 
-        CACHE_MGR["Multi-TTL RedisCacheManager & Redisson Client"]
-        EVENT_BUS["Domain Event Bus (ApplicationEventPublisher)"]
+        subgraph Infra["Shared Infrastructure"]
+            CACHE_MGR["RedisCacheManager & Redisson Lock"]
+            EVENT_BUS["Domain Event Bus"]
+        end
     end
 
-    subgraph Storage["Data & In-Memory Tier"]
+    subgraph Storage["💾 Persistence & In-Memory Tier"]
         DB[("🐘 PostgreSQL 16<br/><small>Relational Source of Truth</small>")]
-        REDIS[("⚡ Redis 7.2 Alpine<br/><small>L2 Cache, Rate Limits, Locks</small>")]
+        REDIS[("⚡ Redis 7.2<br/><small>Cache, Rate Limits, Locks</small>")]
     end
 
     Clients --> Security
-    Security --> RATE
-    RATE -->|ZSet Window Verification| REDIS
-    Security --> Monolith
-
-    DomainModules <--> EVENT_BUS
-    DomainModules <--> CACHE_MGR
+    Security --> DomainModules
+    RATE -.->|Sliding Window Check| REDIS
+    DomainModules <--> Infra
+    DomainModules -->|JPA / Hibernate| DB
     CACHE_MGR <-->|Sub-millisecond Cache / Locks| REDIS
-    Monolith -->|JPA / Hibernate / JDBC| DB
     INSIGHT -.->|Database Profiling :6379| REDIS
 ```
 
