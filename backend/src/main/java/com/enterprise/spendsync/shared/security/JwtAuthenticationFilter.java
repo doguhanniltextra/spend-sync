@@ -37,8 +37,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // If TenantContext is not yet populated by header, populate from JWT claims
             if (authentication.getPrincipal() instanceof UserPrincipal principal) {
-                if (TenantContext.getTenantId() == null && principal.getTenantId() != null) {
-                    TenantContext.setTenantId(principal.getTenantId());
+                if (principal.getId() != null) {
+                    org.slf4j.MDC.put(com.enterprise.spendsync.shared.filter.MdcLoggingFilter.MDC_USER_ID, principal.getId().toString());
+                }
+                if (principal.getRoles() != null && !principal.getRoles().isEmpty()) {
+                    org.slf4j.MDC.put(com.enterprise.spendsync.shared.filter.MdcLoggingFilter.MDC_USER_ROLE, principal.getRoles().iterator().next().name());
+                }
+                if (principal.getTenantId() != null) {
+                    org.slf4j.MDC.put(com.enterprise.spendsync.shared.filter.MdcLoggingFilter.MDC_TENANT_ID, principal.getTenantId().toString());
+                    if (TenantContext.getTenantId() == null) {
+                        TenantContext.setTenantId(principal.getTenantId());
+                    }
                 }
             }
         }

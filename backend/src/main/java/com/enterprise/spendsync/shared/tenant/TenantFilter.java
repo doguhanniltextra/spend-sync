@@ -58,6 +58,7 @@ public class TenantFilter extends OncePerRequestFilter {
                 try {
                     UUID tenantId = UUID.fromString(tenantHeaderValue.trim());
                     TenantContext.setTenantId(tenantId);
+                    org.slf4j.MDC.put(com.enterprise.spendsync.shared.filter.MdcLoggingFilter.MDC_TENANT_ID, tenantId.toString());
                 } catch (IllegalArgumentException e) {
                     sendErrorResponse(response, HttpStatus.BAD_REQUEST, "INVALID_TENANT_HEADER",
                             "The '" + TENANT_HEADER + "' header must be a valid UUID.");
@@ -70,6 +71,7 @@ public class TenantFilter extends OncePerRequestFilter {
                 if (authentication != null && authentication.getPrincipal() instanceof com.enterprise.spendsync.shared.security.UserPrincipal principal) {
                     if (principal.getTenantId() != null) {
                         TenantContext.setTenantId(principal.getTenantId());
+                        org.slf4j.MDC.put(com.enterprise.spendsync.shared.filter.MdcLoggingFilter.MDC_TENANT_ID, principal.getTenantId().toString());
                     }
                 }
             }
