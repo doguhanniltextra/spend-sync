@@ -127,14 +127,25 @@ sequenceDiagram
 
 The backend test suite consists of **337 automated tests** executed via JUnit 5 and JaCoCo. Testing covers standalone unit logic, domain invariant validation, and container-backed integration tests against live PostgreSQL 16 and Redis 7.2 instances.
 
-#### Code Coverage Summary (JaCoCo)
+#### Code Coverage Summary (JaCoCo — Business & Service Layer Only)
 
-| Metric | Measured Value | Covered / Total Units |
-| :--- | :--- | :--- |
-| **Line Coverage** | **64.09%** | 5,217 / 8,140 Lines |
-| **Instruction Coverage** | **60.36%** | 24,616 / 40,783 Instructions |
-| **Branch Coverage** | **36.14%** | 802 / 2,219 Branches |
-| **Test Suite Execution** | **100% Passing** | 337 Tests (0 Failures, 0 Errors, 0 Skipped) |
+To prevent metric inflation or artificial dilution, all boilerplate artifacts (DTOs, JPA Entities, Spring `@Configuration` classes, Exception definitions, and Database Seeders) have been excluded from the analysis scope. The metrics below reflect **262 core business service, security, and calculation classes**:
+
+| Metric | Measured Value | Covered / Total Units | Notes |
+| :--- | :--- | :--- | :--- |
+| **Line Coverage** | **62.03%** | 3,136 / 5,056 Lines | Pure business, service, and controller logic |
+| **Instruction Coverage** | **56.13%** | 14,090 / 25,101 Instructions | JVM bytecode execution coverage |
+| **Branch Coverage** | **36.05%** | 636 / 1,764 Branches | Happy-path covered; edge-case & exception branches remain |
+| **Test Suite Execution** | **100% Passing** | 337 Tests (0 Failures, 0 Errors, 0 Skipped) | Executed in ~26 seconds |
+
+#### Branch Coverage Gap Analysis
+
+The 36.05% branch coverage reflects the following distribution across the service layer:
+- **High Coverage Modules:** Receiving (`72.5%`), Payment (`64.7%`), Multi-Tenant Context (`63.6%`), Analytics (`54.5%`), Budget (`51.3%`).
+- **Remaining Branch Gaps:**
+  - `intelligence` module (RAG, Gemini client, spend intelligence engines: 113 untested decision branches).
+  - `vendorportal` complex workflows (Tax withholding variations, early payment discount rules: 208 untested decision branches).
+  - Defensive guard clauses and exception branches across catalog and core services.
 
 #### Container Integration Test Suite (`com.enterprise.spendsync.testcontainers`)
 

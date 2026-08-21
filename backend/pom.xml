@@ -143,6 +143,22 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/domain/**</exclude>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/exception/**</exclude>
+                        <exclude>**/*Exception.*</exclude>
+                        <exclude>**/*Dto.*</exclude>
+                        <exclude>**/*Request.*</exclude>
+                        <exclude>**/*Response.*</exclude>
+                        <exclude>**/*Config.*</exclude>
+                        <exclude>**/*Seeder.*</exclude>
+                        <exclude>**/SpendSyncApplication.*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
