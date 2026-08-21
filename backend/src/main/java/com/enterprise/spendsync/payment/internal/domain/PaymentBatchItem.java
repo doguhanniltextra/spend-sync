@@ -70,7 +70,7 @@ public class PaymentBatchItem {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected PaymentBatchItem() {
+    public PaymentBatchItem() {
     }
 
     public PaymentBatchItem(Tenant tenant,
@@ -99,6 +99,7 @@ public class PaymentBatchItem {
 
     // Getters & Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public PaymentBatch getPaymentBatch() { return paymentBatch; }
     public void setPaymentBatch(PaymentBatch paymentBatch) { this.paymentBatch = paymentBatch; }

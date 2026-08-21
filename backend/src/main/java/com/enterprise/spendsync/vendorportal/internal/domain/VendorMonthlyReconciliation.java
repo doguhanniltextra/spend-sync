@@ -70,7 +70,7 @@ public class VendorMonthlyReconciliation {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected VendorMonthlyReconciliation() {}
+    public VendorMonthlyReconciliation() {}
 
     public VendorMonthlyReconciliation(Tenant tenant,
                                        Vendor vendor,
@@ -106,6 +106,7 @@ public class VendorMonthlyReconciliation {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public Vendor getVendor() { return vendor; }
     public int getPeriodYear() { return periodYear; }

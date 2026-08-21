@@ -70,7 +70,7 @@ public class VendorUser {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected VendorUser() {}
+    public VendorUser() {}
 
     public VendorUser(Tenant tenant,
                       Vendor vendor,
@@ -103,6 +103,7 @@ public class VendorUser {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public Vendor getVendor() { return vendor; }
     public String getEmail() { return email; }

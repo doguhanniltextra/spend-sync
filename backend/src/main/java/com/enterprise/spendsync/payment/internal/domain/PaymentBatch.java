@@ -98,7 +98,7 @@ public class PaymentBatch {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected PaymentBatch() {
+    public PaymentBatch() {
     }
 
     public PaymentBatch(Tenant tenant,
@@ -139,6 +139,7 @@ public class PaymentBatch {
 
     // Getters & Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getBatchNumber() { return batchNumber; }
     public LegalEntity getLegalEntity() { return legalEntity; }

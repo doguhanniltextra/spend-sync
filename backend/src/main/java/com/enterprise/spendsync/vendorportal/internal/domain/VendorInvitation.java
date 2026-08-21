@@ -57,7 +57,7 @@ public class VendorInvitation {
     @Column(name = "accepted_at")
     private Instant acceptedAt;
 
-    protected VendorInvitation() {}
+    public VendorInvitation() {}
 
     public VendorInvitation(Tenant tenant,
                             String email,
@@ -86,6 +86,7 @@ public class VendorInvitation {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getEmail() { return email; }
     public String getTaxNumber() { return taxNumber; }

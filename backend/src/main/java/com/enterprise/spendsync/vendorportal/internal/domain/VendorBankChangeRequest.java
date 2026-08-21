@@ -64,7 +64,7 @@ public class VendorBankChangeRequest {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected VendorBankChangeRequest() {}
+    public VendorBankChangeRequest() {}
 
     public VendorBankChangeRequest(Tenant tenant,
                                    Vendor vendor,
@@ -87,6 +87,7 @@ public class VendorBankChangeRequest {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public Vendor getVendor() { return vendor; }
     public VendorUser getRequestedByUser() { return requestedByUser; }

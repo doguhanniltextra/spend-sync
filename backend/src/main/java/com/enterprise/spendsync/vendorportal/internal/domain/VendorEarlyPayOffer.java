@@ -76,7 +76,7 @@ public class VendorEarlyPayOffer {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected VendorEarlyPayOffer() {}
+    public VendorEarlyPayOffer() {}
 
     public VendorEarlyPayOffer(Tenant tenant,
                                SupplierInvoice supplierInvoice,
@@ -110,6 +110,7 @@ public class VendorEarlyPayOffer {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public SupplierInvoice getSupplierInvoice() { return supplierInvoice; }
     public Vendor getVendor() { return vendor; }
