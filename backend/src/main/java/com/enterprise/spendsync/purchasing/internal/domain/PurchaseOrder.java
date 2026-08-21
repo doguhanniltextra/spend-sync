@@ -112,7 +112,7 @@ public class PurchaseOrder {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected PurchaseOrder() {
+    public PurchaseOrder() {
     }
 
     public PurchaseOrder(Tenant tenant,
@@ -173,6 +173,7 @@ public class PurchaseOrder {
 
     // Getters and Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getPoNumber() { return poNumber; }
     public int getRevisionNumber() { return revisionNumber; }

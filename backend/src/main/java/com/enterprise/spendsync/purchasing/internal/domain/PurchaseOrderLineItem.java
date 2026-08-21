@@ -78,7 +78,7 @@ public class PurchaseOrderLineItem {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected PurchaseOrderLineItem() {
+    public PurchaseOrderLineItem() {
     }
 
     public PurchaseOrderLineItem(Tenant tenant,
@@ -127,6 +127,7 @@ public class PurchaseOrderLineItem {
 
     // Getters and Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public PurchaseOrder getPurchaseOrder() { return purchaseOrder; }
     public void setPurchaseOrder(PurchaseOrder purchaseOrder) { this.purchaseOrder = purchaseOrder; }

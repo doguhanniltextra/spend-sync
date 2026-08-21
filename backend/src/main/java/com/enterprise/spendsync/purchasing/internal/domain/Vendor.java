@@ -93,7 +93,7 @@ public class Vendor {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected Vendor() {
+    public Vendor() {
     }
 
     public Vendor(Tenant tenant,
@@ -142,6 +142,7 @@ public class Vendor {
 
     // Getters and Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
