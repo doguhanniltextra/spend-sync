@@ -3,7 +3,7 @@
 
     <conversionRule conversionWord="mask" converterClass="com.enterprise.spendsync.shared.logging.PiiMaskingConverter" />
 
-    <!-- 1. Geliştirme Ortamı (Dev / Default): Renkli, İnsan Okunabilir Konsol Formatı -->
+  
     <springProfile name="dev | default">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
@@ -15,7 +15,7 @@
         </root>
     </springProfile>
 
-    <!-- 2. Üretim Ortamı (Prod / Staging): Tek Satır Yapılandırılmış JSON Logstash Formatı -->
+   
     <springProfile name="prod | staging">
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
