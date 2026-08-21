@@ -2,10 +2,13 @@ spring:
   application:
     name: SpendSync
 
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/spendsync_db?sslmode=disable
-    username: spendsync
-    password: spendsync_secret
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/spendsync_db?sslmode=disable}
+    username: ${SPRING_DATASOURCE_USERNAME:spendsync}
+    password: ${SPRING_DATASOURCE_PASSWORD:spendsync_secret}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -15,20 +18,31 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
     open-in-view: false
 
 server:
   port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
 
 spendsync:
   jwt:
     # 512-bit base64 secret (HS512) for secure JWT signing
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A}
     access-token-expiry-seconds: 900 # 15 minutes
     refresh-token-expiry-days: 7 # 7 days
-
