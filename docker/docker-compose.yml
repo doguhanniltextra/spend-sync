@@ -21,6 +21,41 @@ services:
       timeout: 3s
       retries: 5
 
+  # ── Redis 7.2 In-Memory Data Store ───────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: spendsync-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --save 60 1
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - spendsync_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── RedisInsight GUI (Redis Management & Analytics Dashboard) ────────────────
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: spendsync-redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - spendsync_redisinsight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
   # ── SpendSync Backend (Spring Boot 3.3 / Java 21) ────────────────────────────
   backend:
     build:
@@ -33,11 +68,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/spendsync_db?sslmode=disable
       SPRING_DATASOURCE_USERNAME: spendsync
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-spendsync_secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A}
 
 volumes:
   spendsync_postgres_data:
+  spendsync_redis_data:
+  spendsync_redisinsight_data:
