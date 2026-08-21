@@ -52,7 +52,7 @@ public class PaymentBatchItem {
     @Column(name = "vendor_name", nullable = false)
     private String vendorName;
 
-    @Column(name = "vendor_iban", nullable = false, length = 50)
+    @Column(name = "vendor_iban", columnDefinition = "TEXT")
     private String vendorIban;
 
     @Column(name = "amount", nullable = false, precision = 18, scale = 4)

@@ -230,19 +230,27 @@ public class PaymentServiceImpl implements PaymentService {
             ));
 
             // Send Remittance Advice Email to Vendor
-            Map<String, Object> emailData = new HashMap<>();
-            emailData.put("vendorName", item.getVendorName());
-            emailData.put("invoiceNumber", inv.getInvoiceNumber());
-            emailData.put("batchNumber", batch.getBatchNumber());
-            emailData.put("amount", item.getNetPayableAmount() + " " + batch.getCurrency());
-            emailData.put("iban", item.getVendorIban());
+            String targetEmail = item.getVendor().getOrderEmail();
 
-            emailService.sendTemplatedEmail(
-                    item.getVendor().getOrderEmail(),
-                    "Payment Remittance Advice: " + inv.getInvoiceNumber() + " - " + batch.getBatchNumber(),
-                    "payment-remittance-advice",
-                    emailData
-            );
+            if (targetEmail != null && !targetEmail.isBlank()) {
+                try {
+                    Map<String, Object> emailData = new HashMap<>();
+                    emailData.put("vendorName", item.getVendorName());
+                    emailData.put("invoiceNumber", inv.getInvoiceNumber());
+                    emailData.put("batchNumber", batch.getBatchNumber());
+                    emailData.put("amount", item.getNetPayableAmount() + " " + batch.getCurrency());
+                    emailData.put("iban", item.getVendorIban());
+
+                    emailService.sendTemplatedEmail(
+                            targetEmail,
+                            "Payment Remittance Advice: " + inv.getInvoiceNumber() + " - " + batch.getBatchNumber(),
+                            "payment-remittance-advice",
+                            emailData
+                    );
+                } catch (Exception ex) {
+                    log.warn("Could not dispatch remittance email to vendor {}: {}", targetEmail, ex.getMessage());
+                }
+            }
         }
 
         PaymentBatch saved = paymentBatchRepository.save(batch);
