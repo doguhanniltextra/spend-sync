@@ -164,7 +164,7 @@ public class RolePermissionRegistry {
      * @return unmodifiable {@code Set<Permission>}, never null, may be empty
      */
     public Set<Permission> getPermissionsForRole(RoleType role) {
-        return ROLE_PERMISSIONS.getOrDefault(role, Collections.emptySet());
+        return Collections.unmodifiableSet(ROLE_PERMISSIONS.getOrDefault(role, Collections.emptySet()));
     }
 
     /**
