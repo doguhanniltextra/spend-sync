@@ -8,7 +8,10 @@ import { DataTable } from '@/components/datatable/DataTable'
 import { VendorStatusBadge, VendorTierBadge, EInvoiceBadge } from './components/VendorStatusBadge'
 import { VendorCreateModal } from './components/VendorCreateModal'
 import { VendorDetailDrawer } from './components/VendorDetailDrawer'
+import { VendorInviteModal } from './components/VendorInviteModal'
+import { BankChangeApprovalDrawer } from './components/BankChangeApprovalDrawer'
 import { useVendors, useCreateVendor } from './hooks/useVendors'
+import { useBuyerBankChangeRequests } from '@/features/vendorportal/hooks/useVendorPortalQueries'
 import type { VendorResponse, VendorStatus, VendorCategory } from '@/types/purchasing.types'
 import { ROUTES } from '@/constants/routes'
 import { PURCHASING_COPY } from './constants/purchasingCopy'
@@ -18,7 +21,12 @@ export default function VendorListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL')
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const [bankDrawerOpen, setBankDrawerOpen] = useState(false)
   const [selectedVendor, setSelectedVendor] = useState<VendorResponse | null>(null)
+
+  const { data: bankRequests = [] } = useBuyerBankChangeRequests()
+  const pendingBankCount = bankRequests.filter((r) => r.status === 'PENDING').length
 
   const { vendors, isLoading } = useVendors(
     statusFilter as VendorStatus | 'ALL',
@@ -137,12 +145,31 @@ export default function VendorListPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setCreateModalOpen(true)}
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          {PURCHASING_COPY.vendors.onboardCTA}
-        </Button>
+        <div className="flex items-center gap-2.5">
+          {pendingBankCount > 0 && (
+            <button
+              onClick={() => setBankDrawerOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-semibold text-xs transition flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Bank Change Requests ({pendingBankCount})</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setInviteModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-900 font-semibold text-xs transition flex items-center gap-1.5 shadow-sm"
+          >
+            <span>Invite via Magic Link</span>
+          </button>
+
+          <Button
+            onClick={() => setCreateModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            {PURCHASING_COPY.vendors.onboardCTA}
+          </Button>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -188,6 +215,18 @@ export default function VendorListPage() {
       <VendorCreateModal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
+      />
+
+      {/* Magic Link Invite Modal */}
+      <VendorInviteModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+      />
+
+      {/* Bank Change Approval Drawer */}
+      <BankChangeApprovalDrawer
+        isOpen={bankDrawerOpen}
+        onClose={() => setBankDrawerOpen(false)}
       />
 
       {/* Supplier Profile Drawer */}

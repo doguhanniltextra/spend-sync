@@ -26,6 +26,17 @@ const PaymentRunDetailPage  = lazy(() => import('@/features/payments/PaymentRunD
 const OrganizationPage      = lazy(() => import('@/features/organization/OrganizationPage'))
 const ComingSoonPage        = lazy(() => import('@/components/feedback/ComingSoonPage'))
 
+// ─── Vendor Portal Pages ───────────────────────────────────────────────────────
+const VendorLoginPage          = lazy(() => import('@/features/vendorportal/pages/VendorLoginPage'))
+const VendorInviteAcceptPage   = lazy(() => import('@/features/vendorportal/pages/VendorInviteAcceptPage'))
+const VendorLayout             = lazy(() => import('@/features/vendorportal/components/layout/VendorLayout'))
+const VendorOrdersPage         = lazy(() => import('@/features/vendorportal/pages/VendorOrdersPage'))
+const VendorOrderDetailPage     = lazy(() => import('@/features/vendorportal/pages/VendorOrderDetailPage'))
+const VendorInvoicesPage       = lazy(() => import('@/features/vendorportal/pages/VendorInvoicesPage'))
+const VendorFinancePage        = lazy(() => import('@/features/vendorportal/pages/VendorFinancePage'))
+const VendorReconciliationPage = lazy(() => import('@/features/vendorportal/pages/VendorReconciliationPage'))
+const VendorProfilePage        = lazy(() => import('@/features/vendorportal/pages/VendorProfilePage'))
+
 // ─── Loading fallback ──────────────────────────────────────────────────────────
 
 function PageLoader() {
@@ -49,10 +60,51 @@ export const router = createBrowserRouter([
     element: <SuspenseWrapper><LandingPage /></SuspenseWrapper>,
   },
 
-  // Public Sign In
+  // Public Sign In (Buyer)
   {
     path:    ROUTES.login,
     element: <SuspenseWrapper><LoginPage /></SuspenseWrapper>,
+  },
+
+  // Public Vendor Portal Sign In & Magic Link Onboarding
+  {
+    path:    ROUTES.vendor.login,
+    element: <SuspenseWrapper><VendorLoginPage /></SuspenseWrapper>,
+  },
+  {
+    path:    '/vendor/invite/:token',
+    element: <SuspenseWrapper><VendorInviteAcceptPage /></SuspenseWrapper>,
+  },
+
+  // Vendor Portal Authenticated App — wrapped in VendorLayout
+  {
+    element: <SuspenseWrapper><VendorLayout /></SuspenseWrapper>,
+    children: [
+      {
+        path:    ROUTES.vendor.orders,
+        element: <SuspenseWrapper><VendorOrdersPage /></SuspenseWrapper>,
+      },
+      {
+        path:    ROUTES.vendor.orderDetail(':id'),
+        element: <SuspenseWrapper><VendorOrderDetailPage /></SuspenseWrapper>,
+      },
+      {
+        path:    ROUTES.vendor.invoices,
+        element: <SuspenseWrapper><VendorInvoicesPage /></SuspenseWrapper>,
+      },
+      {
+        path:    ROUTES.vendor.finance,
+        element: <SuspenseWrapper><VendorFinancePage /></SuspenseWrapper>,
+      },
+      {
+        path:    ROUTES.vendor.reconciliation,
+        element: <SuspenseWrapper><VendorReconciliationPage /></SuspenseWrapper>,
+      },
+      {
+        path:    ROUTES.vendor.profile,
+        element: <SuspenseWrapper><VendorProfilePage /></SuspenseWrapper>,
+      },
+    ],
   },
 
   // Protected application routes — wrapped in AppLayout
@@ -143,3 +195,4 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+

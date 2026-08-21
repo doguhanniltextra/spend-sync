@@ -57,4 +57,15 @@ export const ROUTES = {
   catalog: {
     root:     '/admin/catalog',
   },
+
+  vendor: {
+    login:          '/vendor/login',
+    invite:         (token: string) => `/vendor/invite/${token}`,
+    orders:         '/vendor/orders',
+    orderDetail:    (id: string) => `/vendor/orders/${id}`,
+    invoices:       '/vendor/invoices',
+    finance:        '/vendor/finance',
+    reconciliation: '/vendor/reconciliation',
+    profile:        '/vendor/profile',
+  },
 } as const
