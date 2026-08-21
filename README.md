@@ -14,104 +14,43 @@ SpendSync is a full-stack **Procure-to-Pay (P2P)** enterprise engine designed as
 
 ## 🏛️ High-Level System Architecture (HLD)
 
-The application is structured into **11 decoupled bounded contexts** within a single deployable artifact. Modules communicate across domain boundaries primarily via asynchronous domain events (`ApplicationEventPublisher` / Apache Kafka).
+The application is structured into **11 decoupled bounded contexts** within a Spring Boot modular monolith, communicating through in-memory Spring Domain Events and an event streaming bus.
 
 ```mermaid
 graph TB
-    subgraph Clients["Clients & Gateways"]
-        WEB["React 18 SPA (Vite / TailwindCSS)"]
-        PORTAL["Vendor Portal SPA"]
-        EDI["e-Invoice / EDI Integrators"]
+    subgraph Clients["Clients"]
+        SPA["Web Application (React / Vite)"]
+        VP["Vendor Portal (Self-Service)"]
     end
 
-    subgraph Security["Security & Tenancy Interceptors"]
-        TF["TenantFilter (ThreadLocal Context)"]
-        JWT["JwtAuthenticationFilter (HMAC-SHA512)"]
-        RBAC["RolePermissionRegistry & Method Security"]
+    subgraph Security["Security & Context Layer"]
+        TF["TenantFilter (ThreadLocal Multi-Tenancy)"]
+        AUTH["JwtAuthenticationFilter & RBAC"]
     end
 
-    subgraph CoreEngine["SpendSync Modular Monolith"]
-        subgraph ModCore["core"]
-            TEN["Tenant & LegalEntity"]
-            CC["CostCenter & Facility"]
-            USR["User & SubAccount"]
+    subgraph Monolith["SpendSync Core Engine"]
+        subgraph DomainModules["Bounded Contexts"]
+            M_CORE["core<br/><small>Tenants, Legal Entities, Users</small>"]
+            M_BGT["budget & requisition<br/><small>Encumbrance, DoA DAG Matrix</small>"]
+            M_CAT["catalog & purchasing<br/><small>Item Master, PO Lifecycle, VKN</small>"]
+            M_RCV["receiving & matching<br/><small>Dock GRN, 3-Way Match Engine</small>"]
+            M_PAY["payment & vendorportal<br/><small>ISO 20022 XML, AES IBAN, PO-Flip</small>"]
+            M_GOV["audit & intelligence<br/><small>Append-Only Log, Price Anomalies</small>"]
         end
 
-        subgraph ModBudget["budget"]
-            BP["BudgetPool Ledger"]
-            ENC["Encumbrance Engine"]
-            TOL["Tolerance & Overrun Rules"]
-        end
-
-        subgraph ModReq["requisition"]
-            PR["Purchase Requisition"]
-            DAG["Approval Chain DAG"]
-            LIMIT["DoA Signing Thresholds"]
-        end
-
-        subgraph ModCat["catalog"]
-            ITEM["Item Master"]
-            PRICE["Contract Pricing"]
-        end
-
-        subgraph ModPurch["purchasing"]
-            PO["Purchase Order"]
-            VEN["Vendor & VKN/TCKN Engine"]
-            REV["Revision & Differential Budget"]
-        end
-
-        subgraph ModRec["receiving"]
-            GRN["Goods Receipt (GRN)"]
-            ODT["Over-Delivery Evaluator"]
-            QC["Dock Inspection & Rejection"]
-        end
-
-        subgraph ModMatch["matching"]
-            M3["Touchless 3-Way Matcher"]
-            INV["Supplier Invoice"]
-            HOLD["Discrepancy Hold Manager"]
-        end
-
-        subgraph ModPay["payment"]
-            RUN["Payment Batch Engine"]
-            XML["ISO 20022 pain.001 Generator"]
-            AES["AES-256-GCM IBAN Vault"]
-        end
-
-        subgraph ModVP["vendorportal"]
-            VPA["Magic Link Auth"]
-            FLIP["PO-Flip Invoicing"]
-            TAX["Withholding Tax Engine"]
-            REC["Form BS Reconciliation"]
-        end
-
-        subgraph ModAudit["audit"]
-            AUD["Append-Only Audit Ledger"]
-            MASK["Regex Data Masker"]
-            CHK["SHA-256 Checksum Validator"]
-        end
-
-        subgraph ModIntel["intelligence & analytics"]
-            ANOM["Price Anomaly Detector (>50%)"]
-            DUP["Duplicate Risk Scorer"]
-            DECK["CFO Live Analytics Deck"]
-        end
+        EVENT_BUS["Domain Event Bus (ApplicationEventPublisher)"]
     end
 
-    subgraph EventLayer["Event Layer"]
-        BUS["Spring Domain Event Bus"]
-        KAFKA["Apache Kafka Broker"]
-    end
-
-    subgraph Storage["Persistence Layer"]
-        PG[("PostgreSQL 16")]
+    subgraph Storage["Persistence & Messaging"]
+        DB[("PostgreSQL 16")]
+        KAFKA["Apache Kafka (Async Events)"]
     end
 
     Clients --> Security
-    Security --> CoreEngine
-    CoreEngine <--> EventLayer
-    CoreEngine --> Storage
-    EventLayer --> KAFKA
+    Security --> Monolith
+    DomainModules <--> EVENT_BUS
+    Monolith --> DB
+    EVENT_BUS -.-> KAFKA
 ```
 
 ---
@@ -121,50 +60,31 @@ graph TB
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Req as Requisitioner
-    actor App as Approver / CFO
-    participant PR as requisition
-    participant BGT as budget
-    participant PO as purchasing
-    actor Ven as Vendor
-    participant RCV as receiving
-    participant MTC as matching
-    participant PAY as payment
-    participant AUD as audit
+    actor User as User (Requester / Approver)
+    participant Req as Requisition & Budget
+    participant PO as Purchasing
+    actor Vendor as Vendor & Receiving
+    participant Match as 3-Way Matching
+    participant Pay as Treasury & Payment
 
-    Req->>PR: Create PR (Items & Cost Center)
-    PR->>BGT: Check & Reserve Funds (Encumbrance)
-    BGT-->>PR: Funds Reserved
-    PR->>PR: Build Dynamic Approval DAG
-    App->>PR: Approve PR (Self-Approval Prohibited)
-    PR->>BGT: Commit Reserved Funds
-    PR->>AUD: Publish RequisitionApprovedEvent
+    User->>Req: Submit PR & Check Encumbrance
+    Req->>Req: Evaluate DoA Approval Chain
+    User->>Req: Approve PR (SoD Enforced)
 
-    PR->>PO: Generate PO (PO-YYYY-XXXXX)
-    PO->>PO: Validate Vendor Tax ID (VKN/TCKN)
-    PO->>Ven: Dispatch PO (Email / Portal)
-    PO->>AUD: Publish PurchaseOrderIssuedEvent
+    Req->>PO: Generate PO (Sequential PO-YYYY-XXXXX)
+    PO->>Vendor: Dispatch PO & Delivery (Waybill)
+    Vendor->>PO: Dock Inspection & GRN Completed
 
-    Ven->>RCV: Delivery & Waybill
-    RCV->>RCV: Verify Over-Delivery Tolerances & Quality
-    RCV->>PO: Update Fulfillment (FULFILLED / PARTIAL)
-    RCV->>AUD: Publish GoodsReceivedEvent
-
-    Ven->>MTC: Submit Invoice (PO-Flip / UBL-TR)
-    MTC->>MTC: Execute 3-Way Match Algorithm
-    alt 3-Way Match Success
-        MTC->>MTC: Status -> APPROVED_FOR_PAYMENT
-        MTC->>BGT: Convert to Spent Funds
+    Vendor->>Match: Ingest Invoice (PO-Flip / UBL-TR)
+    Match->>Match: Execute 3-Way Match (PO vs GRN vs Invoice)
+    alt Match Success
+        Match->>Pay: Approve for Payment & Convert to Spent
     else Discrepancy Found
-        MTC->>MTC: Status -> DISCREPANCY_HOLD
+        Match->>User: Flag Discrepancy Hold
     end
-    MTC->>AUD: Publish InvoiceMatchedEvent
 
-    PAY->>PAY: Aggregate Due Invoices into Batch
-    App->>PAY: Approve Payment Batch (4-Eyes Principle)
-    PAY->>PAY: Decrypt IBAN (AES-256-GCM) & Generate pain.001 XML
-    PAY->>Ven: Dispatch Bank Transfer
-    PAY->>AUD: Publish PaymentDispatchedEvent
+    Pay->>Pay: Batch Due Invoices & Generate ISO 20022 XML
+    Pay->>Vendor: Execute Bank Transfer (Decrypted AES-256 IBAN)
 ```
 
 ---
