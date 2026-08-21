@@ -7,8 +7,11 @@ import com.enterprise.spendsync.core.internal.dto.LegalEntityResponse;
 import com.enterprise.spendsync.core.internal.dto.UpdateLegalEntityRequest;
 import com.enterprise.spendsync.core.internal.repository.LegalEntityRepository;
 import com.enterprise.spendsync.core.internal.repository.TenantRepository;
+import com.enterprise.spendsync.shared.config.RedisConfig;
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
 import com.enterprise.spendsync.shared.tenant.TenantContext;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ public class LegalEntityServiceImpl implements LegalEntityService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisConfig.CACHE_CORE_TENANTS, key = "'legal-entities:' + T(com.enterprise.spendsync.shared.tenant.TenantContext).getRequiredTenantId().toString()")
     public List<LegalEntityResponse> getAllLegalEntities() {
         UUID tenantId = TenantContext.getRequiredTenantId();
         return legalEntityRepository.findAllByTenantId(tenantId).stream()
@@ -46,6 +50,7 @@ public class LegalEntityServiceImpl implements LegalEntityService {
     }
 
     @Override
+    @CacheEvict(value = RedisConfig.CACHE_CORE_TENANTS, allEntries = true)
     public LegalEntityResponse createLegalEntity(CreateLegalEntityRequest request) {
         UUID tenantId = TenantContext.getRequiredTenantId();
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -74,6 +79,7 @@ public class LegalEntityServiceImpl implements LegalEntityService {
     }
 
     @Override
+    @CacheEvict(value = RedisConfig.CACHE_CORE_TENANTS, allEntries = true)
     public LegalEntityResponse updateLegalEntity(UUID id, UpdateLegalEntityRequest request) {
         UUID tenantId = TenantContext.getRequiredTenantId();
         LegalEntity entity = findLegalEntityOrThrow(id, tenantId);
@@ -89,6 +95,7 @@ public class LegalEntityServiceImpl implements LegalEntityService {
     }
 
     @Override
+    @CacheEvict(value = RedisConfig.CACHE_CORE_TENANTS, allEntries = true)
     public LegalEntityResponse updateStatus(UUID id, boolean isActive) {
         UUID tenantId = TenantContext.getRequiredTenantId();
         LegalEntity entity = findLegalEntityOrThrow(id, tenantId);

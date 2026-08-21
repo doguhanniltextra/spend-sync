@@ -25,6 +25,26 @@ spring:
         format_sql: false
     open-in-view: false
 
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 2000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # Default 1 hour (ms)
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: "spendsync:"
+
 server:
   port: 8080
   shutdown: graceful

@@ -12,6 +12,8 @@ import com.enterprise.spendsync.shared.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.cache.annotation.Cacheable;
+import com.enterprise.spendsync.shared.config.RedisConfig;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -76,6 +78,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @Cacheable(value = RedisConfig.CACHE_CATALOG_ITEMS, key = "#tenantId.toString() + ':' + #id.toString()")
     public CatalogItemResponse getCatalogItemById(UUID tenantId, UUID id) {
         CatalogItem item = itemRepository.findWithDetailsById(tenantId, id)
                 .orElseThrow(() -> new ResourceNotFoundException("CatalogItem not found with id: " + id));
@@ -136,6 +139,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @Cacheable(value = RedisConfig.CACHE_CATALOG_CATEGORIES, key = "#tenantId.toString()")
     public List<CatalogCategoryDto> getCategoryTree(UUID tenantId) {
         List<CatalogCategory> rootCategories = categoryRepository.findByTenantIdAndParentIsNull(tenantId);
         return rootCategories.stream()
@@ -144,6 +148,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @Cacheable(value = RedisConfig.CACHE_ANALYTICS_DASHBOARD_KPI, key = "'health:' + #tenantId.toString()")
     public CatalogHealthMetricsDto getCatalogHealthMetrics(UUID tenantId) {
         LocalDate today = LocalDate.now();
         long totalActive = itemRepository.countByTenantIdAndIsActiveTrue(tenantId);
