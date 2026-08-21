@@ -1,0 +1,53 @@
+### =========================================================================
+### SpendSync API: 06. Spend Intelligence & Analytics
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+@tenantId = 79ef8bff-1d87-4088-ab87-935989a568d5
+
+### 1. Get Executive Pulse (CFO Persona)
+GET {{baseUrl}}/api/v1/intelligence/pulse
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 2. Ask Procurement Policy Assistant (RAG Copilot)
+POST {{baseUrl}}/api/v1/intelligence/ask
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "question": "What is the mandatory 3-quote policy threshold and approval matrix for hardware above 100,000 TRY?"
+}
+
+### 3. Get Budget Runway Forecast
+GET {{baseUrl}}/api/v1/intelligence/budget-runway
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 4. Get Savings Opportunities
+GET {{baseUrl}}/api/v1/intelligence/savings-opportunities
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 5. What-If Budget Impact Simulation
+POST {{baseUrl}}/api/v1/intelligence/what-if-simulate
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "costCenterId": "cc100000-0000-0000-0000-000000000100",
+  "additionalSpendAmount": 250000.00,
+  "currency": "TRY"
+}
+
+### 6. Get CFO Executive Deck & Spend Cube
+GET {{baseUrl}}/api/v1/analytics/cfo-deck
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 7. List Immutable Audit Trail
+GET {{baseUrl}}/api/v1/audit/logs
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}

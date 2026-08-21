@@ -1,0 +1,68 @@
+### =========================================================================
+### SpendSync API: 04. Invoice Matching & Electronic Invoicing
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+@tenantId = 79ef8bff-1d87-4088-ab87-935989a568d5
+
+### 1. Login as Strategic Vendor
+# @name vendorLogin
+POST {{baseUrl}}/api/v1/vendor-portal/auth/login
+Content-Type: application/json
+
+{
+  "email": "vendor@apple-dist.com",
+  "password": "Password123!"
+}
+
+> {%
+    client.global.set("vendorToken", response.body.token);
+%}
+
+### 2. Generate PO-Flip Electronic Invoice
+# @name poFlip
+POST {{baseUrl}}/api/v1/vendor-portal/invoices/po-flip/po-2026-0001-id
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "invoiceNumber": "GIB2026000000042",
+  "ettn": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "profileId": "TICARI_FATURA",
+  "invoiceType": "SATIS",
+  "invoiceDate": "2026-08-21",
+  "lineItems": [
+    {
+      "purchaseOrderLineItemId": "po-line-001-id",
+      "invoicedQuantity": 2,
+      "taxRate": 0.20,
+      "tevkifatCode": null,
+      "tevkifatRate": null
+    }
+  ]
+}
+
+> {%
+    client.global.set("createdInvoiceId", response.body.id);
+%}
+
+### 3. List Invoices & 3-Way Match Statuses
+GET {{baseUrl}}/api/v1/matching/invoices
+Authorization: Bearer {{apToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 4. Render Invoice HTML Document (XSLT)
+GET {{baseUrl}}/api/v1/vendor-portal/invoices/{{createdInvoiceId}}/html
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 5. Override Price Discrepancy (Manager Approval)
+POST {{baseUrl}}/api/v1/matching/invoices/{{createdInvoiceId}}/override
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "reason": "Price discrepancy approved due to USD currency exchange variance at delivery date."
+}

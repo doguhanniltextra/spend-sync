@@ -1,0 +1,99 @@
+### =========================================================================
+### SpendSync API: 01. Authentication & Organization Management
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+@tenantId = 79ef8bff-1d87-4088-ab87-935989a568d5
+
+### 1. Actuator Health Check
+GET {{baseUrl}}/actuator/health
+Accept: application/json
+
+### 2. Login as CFO (Root & Financial Approver)
+# @name loginCfo
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "cfo@spendsync.com",
+  "password": "Password123!"
+}
+
+> {%
+    client.global.set("cfoToken", response.body.token);
+    client.global.set("tenantId", response.body.tenantId);
+%}
+
+### 3. Login as Procurement Lead
+# @name loginProcurement
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "procurement.head@spendsync.com",
+  "password": "Password123!"
+}
+
+> {%
+    client.global.set("procurementToken", response.body.token);
+%}
+
+### 4. Login as AP Specialist
+# @name loginAp
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "ap.specialist@spendsync.com",
+  "password": "Password123!"
+}
+
+> {%
+    client.global.set("apToken", response.body.token);
+%}
+
+### 5. Login as Requisitioner
+# @name loginReq
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "senior.dev@spendsync.com",
+  "password": "Password123!"
+}
+
+> {%
+    client.global.set("reqToken", response.body.token);
+%}
+
+### 6. Get Current Organization Context
+GET {{baseUrl}}/api/v1/organization/current-context
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 7. List Legal Entities
+GET {{baseUrl}}/api/v1/organization/legal-entities
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 8. List Cost Centers
+GET {{baseUrl}}/api/v1/organization/cost-centers
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 9. List Facilities
+GET {{baseUrl}}/api/v1/organization/facilities
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 10. Generate Multi-Use Requisitioner Onboarding Link
+POST {{baseUrl}}/api/v1/organization/users/generate-requisitioner-link
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "legalEntityId": "09e3a0db-e890-4b01-b966-98026fb26fc7",
+  "defaultCostCenterId": "cc100000-0000-0000-0000-000000000100",
+  "expirationDays": 14
+}

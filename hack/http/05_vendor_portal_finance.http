@@ -1,0 +1,44 @@
+### =========================================================================
+### SpendSync API: 05. Vendor Finance & Reconciliation
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+@tenantId = 79ef8bff-1d87-4088-ab87-935989a568d5
+
+### 1. Get Invoice Payment Timeline
+GET {{baseUrl}}/api/v1/vendor-portal/invoices/{{createdInvoiceId}}/payment-status
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 2. List Available Dynamic Early Pay Offers
+GET {{baseUrl}}/api/v1/vendor-portal/finance/early-pay-offers
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 3. Accept 2% Early Payment Cash Discount
+POST {{baseUrl}}/api/v1/vendor-portal/invoices/{{createdInvoiceId}}/accept-early-discount
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 4. Get Vendor Statement of Accounts (SOA)
+GET {{baseUrl}}/api/v1/vendor-portal/finance/statement-of-accounts
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 5. Get Monthly BA-BS Reconciliation
+GET {{baseUrl}}/api/v1/vendor-portal/finance/reconciliation?year=2026&month=8
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 6. Approve Monthly Reconciliation with SHA-256 Digital Seal
+POST {{baseUrl}}/api/v1/vendor-portal/finance/reconciliation/approve
+Authorization: Bearer {{vendorToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "month": 8,
+  "notes": "Approved by Vendor Finance Controller",
+  "disputed": false
+}

@@ -1,0 +1,49 @@
+### =========================================================================
+### SpendSync API: 03. Purchasing Orders & Goods Receiving
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+@tenantId = 79ef8bff-1d87-4088-ab87-935989a568d5
+
+### 1. List Vendors
+GET {{baseUrl}}/api/v1/purchasing/vendors
+Authorization: Bearer {{procurementToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 2. List Purchase Orders (PO)
+GET {{baseUrl}}/api/v1/purchasing/orders
+Authorization: Bearer {{procurementToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 3. Issue Purchase Order to Vendor
+POST {{baseUrl}}/api/v1/purchasing/orders/po-2026-0001-id/issue
+Authorization: Bearer {{procurementToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 4. List Pending Orders for Warehouse Receiving
+GET {{baseUrl}}/api/v1/receiving/orders/pending
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+
+### 5. Create Goods Receipt Note (GRN)
+# @name createGrn
+POST {{baseUrl}}/api/v1/receiving/receipts
+Authorization: Bearer {{cfoToken}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "purchaseOrderId": "po-2026-0001-id",
+  "waybillNumber": "IRS-2026-99042",
+  "notes": "Physical inspection completed at Gebze Facility",
+  "lineItems": [
+    {
+      "purchaseOrderLineItemId": "po-line-001-id",
+      "quantityReceived": 2,
+      "quantityAccepted": 2,
+      "quantityDamaged": 0,
+      "quantityRejected": 0,
+      "qualityInspectionNotes": "Unboxing passed. Serial numbers verified."
+    }
+  ]
+}
