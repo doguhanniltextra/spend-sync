@@ -125,26 +125,17 @@ sequenceDiagram
 <details open>
 <summary><h3>Automated Testing & Coverage Metrics</h3></summary>
 
-The backend test suite consists of **421 automated tests** executed via JUnit 5 and JaCoCo. Testing covers standalone unit logic, domain invariant validation, parameterized branch matrix tests, and container-backed integration tests against live PostgreSQL 16 and Redis 7.2 instances.
 
-#### Code Coverage Summary (JaCoCo — Business & Service Layer Only)
 
-To prevent metric inflation or artificial dilution, all boilerplate artifacts (DTOs, JPA Entities, Spring `@Configuration` classes, Exception definitions, and Database Seeders) have been excluded from the analysis scope. The metrics below reflect **262 core business service, security, and calculation classes**:
+The backend test suite contains **512 automated tests** executed via JUnit 5, Mockito, and Testcontainers (PostgreSQL 16 & Kafka). All boilerplate artifacts (Entities, DTOs, Configurations) are excluded to reflect pure domain logic.
 
-| Metric | Measured Value | Covered / Total Units | Notes |
+| Metric | Measured Value | Covered / Total Units | Scope |
 | :--- | :--- | :--- | :--- |
-| **Line Coverage** | **63.11%** | 3,191 / 5,056 Lines | Pure business, service, and controller logic |
-| **Branch Coverage** | **38.21%** | 674 / 1,764 Branches | Parameterized + negative branch matrix tests added (TEST-13) |
-| **Test Suite Execution** | **100% Passing** | 421 Tests (0 Failures, 0 Errors, 0 Skipped) | Executed in ~56 seconds |
+| **Line Coverage** | **78.46%** | 3,967 / 5,056 Lines | Pure business, service, and security logic |
+| **Branch Coverage** | **54.08%** | 954 / 1,764 Branches | Domain invariants & boundary matrix |
+| **Instruction Coverage** | **72.31%** | 18,150 / 25,101 Instructions | JVM bytecode execution coverage |
+| **Test Suite Status** | **100% Passing** | 512 Tests (0 Failures, 0 Skipped) | Executed in ~42s |
 
-#### Branch Coverage Gap Analysis
-
-The 38.21% branch coverage (up from 36.05% baseline) reflects coverage after TEST-13 parameterized and negative branch matrix additions:
-- **Covered by TEST-13:** 3-way match tolerance matrices, VKN/TCKN checksum algorithm branches, budget hard-stop/frozen/closed guard clauses, requisition SoD self-approval enforcement, spend intelligence engine decision paths, tenant filter error paths.
-- **Remaining Branch Gaps:**
-  - `intelligence` module RAG and Gemini client integration paths (external API branches).
-  - `vendorportal` complex early-payment discount edge cases.
-  - Defensive guard clauses in catalog and core services requiring database state setup.
 
 #### Container Integration Test Suite (`com.enterprise.spendsync.testcontainers`)
 
