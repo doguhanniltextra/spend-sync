@@ -34,8 +34,8 @@ public class CatalogCacheContainerTest extends AbstractContainerIntegrationTest 
     @Test
     @DisplayName("TC-CT-07 & TC-CT-08: Should query database on first call and automatically populate real Redis with 6h TTL")
     void shouldCacheCatalogCategoryTreeInRealRedis() {
-        // 1. Seed Tenant and Root Category in real PostgreSQL
-        Tenant tenant = tenantRepository.save(new Tenant("Cache Tenant", "cache-tenant-" + UUID.randomUUID()));
+        String uid = UUID.randomUUID().toString().substring(0, 8);
+        Tenant tenant = tenantRepository.save(new Tenant("Cache Tenant " + uid, "cache-tenant-" + uid));
         UUID tenantId = tenant.getId();
 
         CatalogCategory itCat = new CatalogCategory(tenant, null, "IT-EQUIP", "IT Equipment", "laptop", "Hardware & IT");

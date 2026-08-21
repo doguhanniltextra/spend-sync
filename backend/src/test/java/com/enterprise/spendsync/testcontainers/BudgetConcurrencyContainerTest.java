@@ -47,8 +47,8 @@ public class BudgetConcurrencyContainerTest extends AbstractContainerIntegration
     @Test
     @DisplayName("TC-CT-04 to TC-CT-06: 10 parallel threads attempting 20k spend on 100k budget with real PostgreSQL Pessimistic Lock")
     void shouldPreventDoubleSpendingUnderHighConcurrency() throws InterruptedException {
-        // 1. Seed Tenant, LegalEntity, CostCenter, and BudgetPool in PostgreSQL container
-        Tenant tenant = tenantRepository.save(new Tenant("Concurrency Tenant", "concurrency-tenant-" + UUID.randomUUID()));
+        String uid = UUID.randomUUID().toString().substring(0, 8);
+        Tenant tenant = tenantRepository.save(new Tenant("Concurrency Tenant " + uid, "concurrency-tenant-" + uid));
         LegalEntity legalEntity = legalEntityRepository.save(new LegalEntity(
                 tenant, "Concurrency Corp", "CC-01", "1234567890", "TRY", "Istanbul", "TR"
         ));
