@@ -14,6 +14,8 @@ import com.enterprise.spendsync.core.internal.service.RequisitionerInvitationSer
 import com.enterprise.spendsync.core.internal.service.SubAccountInvitationService;
 import com.enterprise.spendsync.core.internal.service.UserService;
 import com.enterprise.spendsync.shared.config.Endpoints;
+import com.enterprise.spendsync.shared.ratelimit.RateLimit;
+import com.enterprise.spendsync.shared.ratelimit.RateLimitType;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +57,7 @@ public class AuthController {
     }
 
     @PostMapping(Endpoints.Auth.LOGIN)
+    @RateLimit(key = "login", limit = 5, periodSeconds = 60, type = RateLimitType.IP)
     public ResponseEntity<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthTokenResponse response = authService.login(request);
         return ResponseEntity.ok(response);
