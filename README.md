@@ -1,4 +1,4 @@
-# SpendSync — Enterprise Procure-to-Pay (P2P) Engine
+# SpendSync — Procurement & Spend Management System
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -8,35 +8,35 @@
 [![Apache Kafka](https://img.shields.io/badge/Kafka-3.7-black.svg)](https://kafka.apache.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-SpendSync is a full-stack **Procure-to-Pay (P2P)** enterprise engine designed as a **Modular Monolith** with **Domain-Driven Design (DDD)** and **Event-Driven Architecture (EDA)**. It manages the complete procurement lifecycle: budget encumbrance, dynamic approval workflows (DAG), purchase orders, dock receiving, touchless 3-way invoice matching, treasury payment runs, and vendor self-service e-invoicing.
+SpendSync is a procurement and spend management application built with Spring Boot and React. It covers standard purchasing workflows: purchase requisitions, approval chains, purchase orders, goods receiving, 3-way invoice matching, payment batches, and a self-service vendor portal.
 
 ---
 
 <details open>
-<summary><h3>🏛️ System Architecture & High-Level Design (HLD)</h3></summary>
+<summary><h3>🏛️ System Architecture</h3></summary>
 
-The application is structured into **11 decoupled bounded contexts** within a Spring Boot modular monolith, communicating through in-memory Spring Domain Events and an event streaming bus.
+The application is structured into modular domain packages within a Spring Boot backend, communicating through in-memory Spring Domain Events and an event broker.
 
 ```mermaid
 graph TB
     subgraph Clients["Clients"]
         SPA["Web Application (React / Vite)"]
-        VP["Vendor Portal (Self-Service)"]
+        VP["Vendor Portal"]
     end
 
     subgraph Security["Security & Context Layer"]
-        TF["TenantFilter (ThreadLocal Multi-Tenancy)"]
+        TF["TenantFilter (Multi-Tenancy)"]
         AUTH["JwtAuthenticationFilter & RBAC"]
     end
 
     subgraph Monolith["SpendSync Core Engine"]
-        subgraph DomainModules["Bounded Contexts"]
+        subgraph DomainModules["Application Modules"]
             M_CORE["core<br/><small>Tenants, Legal Entities, Users</small>"]
-            M_BGT["budget & requisition<br/><small>Encumbrance, DoA DAG Matrix</small>"]
-            M_CAT["catalog & purchasing<br/><small>Item Master, PO Lifecycle, VKN</small>"]
-            M_RCV["receiving & matching<br/><small>Dock GRN, 3-Way Match Engine</small>"]
-            M_PAY["payment & vendorportal<br/><small>ISO 20022 XML, AES IBAN, PO-Flip</small>"]
-            M_GOV["audit & intelligence<br/><small>Append-Only Log, Price Anomalies</small>"]
+            M_BGT["budget & requisition<br/><small>Budget Pools, PR Approvals</small>"]
+            M_CAT["catalog & purchasing<br/><small>Item Master, PO Lifecycle</small>"]
+            M_RCV["receiving & matching<br/><small>Goods Receipts, 3-Way Match</small>"]
+            M_PAY["payment & vendorportal<br/><small>Payment Runs, Vendor Portal</small>"]
+            M_GOV["audit & analytics<br/><small>Audit Logs, Analytics</small>"]
         end
 
         EVENT_BUS["Domain Event Bus (ApplicationEventPublisher)"]
@@ -59,7 +59,7 @@ graph TB
 ---
 
 <details>
-<summary><h3>🔄 End-to-End P2P Execution Pipeline</h3></summary>
+<summary><h3>🔄 Purchasing Lifecycle Pipeline</h3></summary>
 
 ```mermaid
 sequenceDiagram
@@ -71,24 +71,24 @@ sequenceDiagram
     participant Match as 3-Way Matching
     participant Pay as Treasury & Payment
 
-    User->>Req: Submit PR & Check Encumbrance
-    Req->>Req: Evaluate DoA Approval Chain
-    User->>Req: Approve PR (SoD Enforced)
+    User->>Req: Submit PR & Check Budget
+    Req->>Req: Evaluate Approval Chain
+    User->>Req: Approve PR
 
-    Req->>PO: Generate PO (Sequential PO-YYYY-XXXXX)
-    PO->>Vendor: Dispatch PO & Delivery (Waybill)
-    Vendor->>PO: Dock Inspection & GRN Completed
+    Req->>PO: Generate PO (PO-YYYY-XXXXX)
+    PO->>Vendor: Dispatch PO & Delivery
+    Vendor->>PO: Dock Inspection & Goods Receipt
 
-    Vendor->>Match: Ingest Invoice (PO-Flip / UBL-TR)
+    Vendor->>Match: Submit Invoice
     Match->>Match: Execute 3-Way Match (PO vs GRN vs Invoice)
     alt Match Success
-        Match->>Pay: Approve for Payment & Convert to Spent
+        Match->>Pay: Approve for Payment
     else Discrepancy Found
         Match->>User: Flag Discrepancy Hold
     end
 
-    Pay->>Pay: Batch Due Invoices & Generate ISO 20022 XML
-    Pay->>Vendor: Execute Bank Transfer (Decrypted AES-256 IBAN)
+    Pay->>Pay: Create Payment Batch
+    Pay->>Vendor: Process Bank Payment
 ```
 
 </details>
@@ -96,13 +96,13 @@ sequenceDiagram
 ---
 
 <details>
-<summary><h3>🛠️ Tech Stack & Architecture Matrix</h3></summary>
+<summary><h3>🛠️ Tech Stack</h3></summary>
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Backend Framework** | Java 21 (LTS), Spring Boot 3.3.0, Spring Data JPA, Spring Security |
-| **Persistence & Messaging** | PostgreSQL 16, Hibernate 6, HikariCP, Apache Kafka 3.7 (KRaft) |
-| **Security & Crypto** | JJWT (HMAC-SHA512), AES-256-GCM, BCrypt |
+| **Backend Framework** | Java 21, Spring Boot 3.3.0, Spring Data JPA, Spring Security |
+| **Persistence & Messaging** | PostgreSQL 16, Hibernate 6, HikariCP, Apache Kafka 3.7 |
+| **Security & Auth** | JWT, BCrypt, Role-Based Access Control |
 | **API & Documentation** | SpringDoc OpenAPI 2.5, Swagger UI, Bean Validation |
 | **Frontend Framework** | React 18.3, TypeScript 5.5, Vite 5.4 |
 | **State & Styling** | TanStack React Query v5, Zustand, TailwindCSS, Lucide Icons, Axios |
