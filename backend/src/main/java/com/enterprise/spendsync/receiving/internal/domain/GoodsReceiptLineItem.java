@@ -88,6 +88,7 @@ public class GoodsReceiptLineItem {
 
     // Getters & Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public GoodsReceipt getGoodsReceipt() { return goodsReceipt; }
     public void setGoodsReceipt(GoodsReceipt goodsReceipt) { this.goodsReceipt = goodsReceipt; }

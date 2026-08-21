@@ -154,7 +154,7 @@ public class SupplierInvoice {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected SupplierInvoice() {
+    public SupplierInvoice() {
     }
 
     public SupplierInvoice(Tenant tenant,
@@ -235,6 +235,7 @@ public class SupplierInvoice {
 
     // Getters & Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getInvoiceNumber() { return invoiceNumber; }
     public String getEttn() { return ettn; }

@@ -129,6 +129,7 @@ public class SupplierInvoiceLineItem {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public SupplierInvoice getSupplierInvoice() { return supplierInvoice; }
     public void setSupplierInvoice(SupplierInvoice supplierInvoice) { this.supplierInvoice = supplierInvoice; }

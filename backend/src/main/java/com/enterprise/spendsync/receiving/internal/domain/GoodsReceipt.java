@@ -126,6 +126,7 @@ public class GoodsReceipt {
 
     // Getters & Setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public Tenant getTenant() { return tenant; }
     public String getReceiptNumber() { return receiptNumber; }
     public PurchaseOrder getPurchaseOrder() { return purchaseOrder; }
