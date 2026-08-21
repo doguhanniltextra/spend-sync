@@ -14,25 +14,25 @@ SpendSync is an enterprise procurement and spend management platform built with 
 ---
 
 <details open>
-<summary><h3>🏛️ System Architecture</h3></summary>
+<summary><h3>System Architecture</h3></summary>
 
-The application is structured as a hardened Modular Monolith. It integrates **PostgreSQL 16** as the persistent relational source of truth and **Redis 7.2** for high-throughput L2 multi-TTL caching, distributed rate limiting, and concurrency control.
+The application is structured as a Modular Monolith. It integrates **PostgreSQL 16** as the persistent relational source of truth and **Redis 7.2** for high-throughput L2 multi-TTL caching, distributed rate limiting, and concurrency control.
 
 ```mermaid
 graph TB
-    subgraph Clients["🌐 Clients & Tools"]
+    subgraph Clients["Clients & Tools"]
         SPA["React SPA (:5173)"]
         VP["Vendor Portal"]
         INSIGHT["RedisInsight GUI (:5540)"]
     end
 
-    subgraph Security["🔒 Security & Interceptor Layer"]
+    subgraph Security["Security & Interceptor Layer"]
         TF["TenantFilter"]
         AUTH["JwtAuthenticationFilter"]
         RATE["Redis RateLimiter"]
     end
 
-    subgraph Monolith["⚙️ SpendSync Core Engine (Spring Boot 3.3 / Java 21)"]
+    subgraph Monolith["SpendSync Core Engine (Spring Boot 3.3 / Java 21)"]
         subgraph DomainModules["Domain Modules"]
             direction TB
             M_CORE["Core (Tenants / Users)"]
@@ -49,9 +49,9 @@ graph TB
         end
     end
 
-    subgraph Storage["💾 Persistence & In-Memory Tier"]
-        DB[("🐘 PostgreSQL 16<br/><small>Relational Source of Truth</small>")]
-        REDIS[("⚡ Redis 7.2<br/><small>Cache, Rate Limits, Locks</small>")]
+    subgraph Storage["Persistence & In-Memory Tier"]
+        DB[("PostgreSQL 16<br/><small>Relational Source of Truth</small>")]
+        REDIS[("Redis 7.2<br/><small>Cache, Rate Limits, Locks</small>")]
     end
 
     Clients --> Security
@@ -68,7 +68,7 @@ graph TB
 ---
 
 <details>
-<summary><h3>🔄 Purchasing Lifecycle Pipeline</h3></summary>
+<summary><h3>Purchasing Lifecycle Pipeline</h3></summary>
 
 ```mermaid
 sequenceDiagram
@@ -104,7 +104,7 @@ sequenceDiagram
 ---
 
 <details>
-<summary><h3>🛠️ Tech Stack</h3></summary>
+<summary><h3>Tech Stack</h3></summary>
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -122,8 +122,42 @@ sequenceDiagram
 
 ---
 
+<details open>
+<summary><h3>Automated Testing & Coverage Metrics</h3></summary>
+
+The backend test suite consists of **337 automated tests** executed via JUnit 5 and JaCoCo. Testing covers standalone unit logic, domain invariant validation, and container-backed integration tests against live PostgreSQL 16 and Redis 7.2 instances.
+
+#### Code Coverage Summary (JaCoCo)
+
+| Metric | Measured Value | Covered / Total Units |
+| :--- | :--- | :--- |
+| **Line Coverage** | **64.09%** | 5,217 / 8,140 Lines |
+| **Instruction Coverage** | **60.36%** | 24,616 / 40,783 Instructions |
+| **Branch Coverage** | **36.14%** | 802 / 2,219 Branches |
+| **Test Suite Execution** | **100% Passing** | 337 Tests (0 Failures, 0 Errors, 0 Skipped) |
+
+#### Container Integration Test Suite (`com.enterprise.spendsync.testcontainers`)
+
+Container integration tests execute against dedicated PostgreSQL 16 and Redis 7.2 instances to validate behavior requiring real database locking and in-memory data structures:
+
+1. **Sliding Window Rate Limiting (`RateLimitContainerTest`):**
+   - Evaluates Redis `ZSET` time-window eviction (`ZREMRANGEBYSCORE`, `ZCARD`, `ZADD`).
+   - Validates that requests within threshold succeed (`HTTP 200 OK`) and excess requests are intercepted (`HTTP 429 Too Many Requests`) with correct `Retry-After` and `X-RateLimit-*` headers.
+
+2. **Pessimistic Locking & Concurrency Control (`BudgetConcurrencyContainerTest`):**
+   - Simulates 10 concurrent threads attempting simultaneous budget reservations against a fixed allocation pool.
+   - Validates PostgreSQL row-level `@Lock(LockModeType.PESSIMISTIC_WRITE)` (`SELECT ... FOR UPDATE`), confirming that exactly 5 requests succeed, 5 are rejected due to insufficient funds, and the remaining pool balance equals 0.00 with zero double-spending.
+
+3. **Multi-TTL L2 Caching (`CatalogCacheContainerTest`):**
+   - Validates Spring Cache interception, writing domain entities to Redis with configured TTLs (e.g., 6 hours for catalog data, 12 hours for tenant configuration).
+   - Confirms polymorphic JSON serialization via `GenericJackson2JsonRedisSerializer` and sub-millisecond cache hit retrieval.
+
+</details>
+
+---
+
 <details>
-<summary><h3>🚀 Quickstart & Local Setup</h3></summary>
+<summary><h3>Quickstart & Local Setup</h3></summary>
 
 #### Prerequisites
 - Java 21+
@@ -147,7 +181,14 @@ mvn clean spring-boot:run
 - Swagger UI Documentation: `http://localhost:8080/swagger-ui.html`
 - Health Probes: `http://localhost:8080/actuator/health`
 
-#### 3. Launch Frontend
+#### 3. Run Backend Test Suite & Coverage Report
+```bash
+cd backend
+mvn clean test
+```
+- JaCoCo HTML Report: `backend/target/site/jacoco/index.html`
+
+#### 4. Launch Frontend
 ```bash
 cd frontend
 npm install
@@ -159,6 +200,6 @@ npm run dev
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
