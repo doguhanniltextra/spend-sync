@@ -9,16 +9,35 @@ services:
     environment:
       POSTGRES_DB: spendsync_db
       POSTGRES_USER: spendsync
-      POSTGRES_PASSWORD: spendsync_secret
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-spendsync_secret}
     ports:
       - "5432:5432"
     volumes:
       - spendsync_postgres_data:/var/lib/postgresql/data
+      - ../backend/seed_enterprise_data.sql:/docker-entrypoint-initdb.d/01_seed_enterprise.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U spendsync -d spendsync_db"]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 3s
       retries: 5
+
+  # ── SpendSync Backend (Spring Boot 3.3 / Java 21) ────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: spendsync-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/spendsync_db?sslmode=disable
+      SPRING_DATASOURCE_USERNAME: spendsync
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-spendsync_secret}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A}
 
 volumes:
   spendsync_postgres_data:
