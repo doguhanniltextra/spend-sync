@@ -1,23 +1,99 @@
-name: Run Unit Tests
+name: Dynamic Backend Unit Tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - 'backend/**'
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - 'backend/**'
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Backend Unit Test Suite
+  filter:
+    name: Detect Changed Modules
     runs-on: self-hosted
-
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      modules: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Execute Backend Unit Tests
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared:
+              - 'backend/pom.xml'
+              - 'backend/src/main/java/com/enterprise/spendsync/shared/**'
+              - 'backend/src/test/java/com/enterprise/spendsync/shared/**'
+              - 'backend/src/test/java/com/enterprise/spendsync/architecture/**'
+              - 'backend/src/main/java/com/enterprise/spendsync/core/**'
+            vendorportal:
+              - 'backend/src/**/vendorportal/**'
+            purchasing:
+              - 'backend/src/**/purchasing/**'
+            requisition:
+              - 'backend/src/**/requisition/**'
+            budget:
+              - 'backend/src/**/budget/**'
+            matching:
+              - 'backend/src/**/matching/**'
+            payment:
+              - 'backend/src/**/payment/**'
+            receiving:
+              - 'backend/src/**/receiving/**'
+            catalog:
+              - 'backend/src/**/catalog/**'
+            intelligence:
+              - 'backend/src/**/intelligence/**'
+            analytics:
+              - 'backend/src/**/analytics/**'
+            audit:
+              - 'backend/src/**/audit/**'
+
+  test:
+    name: Run Targeted Tests
+    needs: filter
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Execute Targeted Tests
+        shell: pwsh
         working-directory: ./backend
-        run: mvn test -Dtest="!*ContainerTest"
+        run: |
+          $isManual = "${{ github.event_name }}" -eq "workflow_dispatch"
+          $isShared = "${{ needs.filter.outputs.shared }}" -eq "true"
+          
+          if ($isManual -or $isShared) {
+              Write-Host ">> Core/Shared changes detected. Running full unit test suite..." -ForegroundColor Cyan
+              mvn test -Dtest="!*ContainerTest"
+              exit $LASTEXITCODE
+          }
+          
+          $changedModules = '${{ needs.filter.outputs.modules }}' | ConvertFrom-Json
+          $testPatterns = @()
+          
+          foreach ($mod in $changedModules) {
+              if ($mod -ne "shared") {
+                  $testPatterns += "com.enterprise.spendsync.$mod.**"
+              }
+          }
+          
+          if ($testPatterns.Count -eq 0) {
+              Write-Host ">> No module-level test execution required. Skipping." -ForegroundColor Green
+              exit 0
+          }
+          
+          $filterArg = ($testPatterns -join ",")
+          Write-Host ">> Running tests for targeted modules: $filterArg" -ForegroundColor Yellow
+          
+          # Incremental test 
+          mvn test -Dtest="$filterArg"
+          exit $LASTEXITCODE
