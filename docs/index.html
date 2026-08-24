@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A concise overview of SpendSync, a procurement and spend management system." />
+    <title>SpendSync | Project Overview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="SpendSync home"><span class="brand-mark">S</span> SpendSync</a>
+      <nav aria-label="Main navigation">
+        <a class="nav-link is-active" href="#overview">Overview</a>
+        <a class="nav-link" href="#workflow">Workflow</a>
+        <a class="nav-link" href="#architecture">Architecture</a>
+        <a class="nav-link" href="#stack">Stack</a>
+      </nav>
+      <a class="source-link" href="#architecture">System design <span aria-hidden="true">↓</span></a>
+    </header>
+
+    <main id="main">
+      <section class="hero section" id="top">
+        <p class="eyebrow"><span></span> Procurement, in one place</p>
+        <div class="hero-grid">
+          <div>
+            <h1>Spend moves through one <em>connected</em> system.</h1>
+            <p class="hero-copy">SpendSync is a procurement and spend management platform that brings a purchase request, its approval, and its payment steps into one flow, along with the relevant budget context and supplier records.</p>
+          </div>
+          <aside class="hero-note" aria-label="Project summary">
+            <p class="mono">PROJECT / 01</p>
+            <p>Built as a modular monolith: one product surface, clearly separated domain responsibilities.</p>
+            <dl>
+              <div><dt>Core</dt><dd>Procure-to-pay</dd></div>
+              <div><dt>Interface</dt><dd>React SPA + vendor portal</dd></div>
+              <div><dt>API</dt><dd>Spring Boot / REST</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section intro" id="overview">
+        <div class="section-label"><span>01</span> What it is</div>
+        <div class="section-content">
+          <h2>A practical operating layer for company spend.</h2>
+          <p>Purchasing rarely happens in a straight line. A request needs a budget, an approval may depend on authority limits, goods have to be received, and invoices must agree with what was ordered. SpendSync keeps those related decisions and records together.</p>
+          <p>It is designed for internal requesters, approvers, purchasing teams, finance teams, and vendors. Each group works with the same lifecycle from a different, appropriate view.</p>
+        </div>
+      </section>
+
+      <section class="section scenario-section" id="scenario">
+        <div class="section-label"><span>02</span> A typical example</div>
+        <div class="scenario-content">
+          <div>
+            <p class="eyebrow"><span></span> Equipping a new team</p>
+            <h2>Ordering laptops for new starters.</h2>
+            <p class="section-lead">A department needs ten laptops before new colleagues join. Rather than handling the request across email, spreadsheets, and separate finance records, the purchase can move through one visible process.</p>
+          </div>
+          <ol class="scenario-steps">
+            <li><span>1</span><p><b>The requester</b> creates a requisition, selects the devices from the catalog, and assigns the relevant cost centre.</p></li>
+            <li><span>2</span><p><b>The approver</b> reviews the request against their authority limit and the available budget.</p></li>
+            <li><span>3</span><p><b>The purchasing team</b> turns the approved request into a purchase order for the chosen supplier.</p></li>
+            <li><span>4</span><p><b>When the delivery arrives,</b> the receiving record confirms what was received and whether anything needs attention.</p></li>
+            <li><span>5</span><p><b>Finance</b> compares the supplier invoice with the order and goods receipt before it is included in a payment batch.</p></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section workflow-section" id="workflow">
+        <div class="section-label"><span>03</span> The working flow</div>
+        <div class="workflow-wrap">
+          <p class="section-lead">The application follows the procure-to-pay lifecycle, with budget and approval checks where they are needed.</p>
+          <ol class="workflow">
+            <li><span class="step-number">01</span><div><h3>Request</h3><p>A requester creates a purchase requisition, using catalog data where it is available.</p></div></li>
+            <li><span class="step-number">02</span><div><h3>Review</h3><p>Budget availability and delegation-of-authority rules shape the approval path.</p></div></li>
+            <li><span class="step-number">03</span><div><h3>Order</h3><p>An approved request can move into a purchase order and supplier-facing workflow.</p></div></li>
+            <li><span class="step-number">04</span><div><h3>Receive</h3><p>Goods receipts and inspection records establish what was actually delivered.</p></div></li>
+            <li><span class="step-number">05</span><div><h3>Match &amp; pay</h3><p>Invoices are checked against the order and receipt before entering a payment batch.</p></div></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section capability-section" aria-labelledby="capabilities-title">
+        <div class="section-label"><span>04</span> Capabilities</div>
+        <div class="capability-area">
+          <h2 id="capabilities-title">Useful context throughout the purchasing process.</h2>
+          <div class="capability-grid">
+            <article><p class="mono">BUDGETS</p><h3>Commitment-aware planning</h3><p>Budget pools, reservations, transfers, and enforcement modes keep intended spend visible before it becomes an invoice.</p></article>
+            <article><p class="mono">GOVERNANCE</p><h3>Contextual access</h3><p>Tenant boundaries, roles, facilities, legal entities, and approval limits are part of the operating model.</p></article>
+            <article><p class="mono">MATCHING</p><h3>Evidence before payment</h3><p>The three-way matching engine compares purchase order, goods receipt, and supplier invoice data, exposing discrepancies for review.</p></article>
+            <article><p class="mono">VISIBILITY</p><h3>Records with a timeline</h3><p>Audit logs, analytics, and spend intelligence make it easier to understand how money moved and why.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section architecture-section" id="architecture">
+        <div class="section-label"><span>05</span> How it is built</div>
+        <div class="architecture-content">
+          <div>
+            <h2>One deployable application, organized around business domains.</h2>
+            <p>SpendSync uses a modular-monolith architecture. Domain modules keep their own responsibilities while sharing the application’s security, event, persistence, and observability foundations. This reduces operational overhead without treating the procurement lifecycle as one large, indistinct feature.</p>
+          </div>
+          <div class="system-map" role="img" aria-label="A diagram showing React and vendor portal clients connecting to the Spring Boot application, which connects to PostgreSQL and Redis.">
+            <div class="map-layer clients"><span class="mono">CLIENTS</span><b>React application</b><b>Vendor portal</b></div>
+            <div class="map-arrow" aria-hidden="true">↓</div>
+            <div class="map-layer application"><span class="mono">APPLICATION</span><b>Spring Boot domain modules</b><small>Core · Catalog · Requisitions · Purchasing · Receiving · Matching · Payments · Audit</small></div>
+            <div class="map-arrow split" aria-hidden="true">↙ &nbsp;&nbsp;&nbsp;&nbsp; ↘</div>
+            <div class="map-storage"><div><span class="mono">SOURCE OF TRUTH</span><b>PostgreSQL</b><small>Relational records</small></div><div><span class="mono">SPEED &amp; COORDINATION</span><b>Redis</b><small>Cache, rate limits, locks</small></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section technical-section" id="stack">
+        <div class="section-label"><span>06</span> Technical notes</div>
+        <div class="technical-content">
+          <p class="section-lead">The platform uses conventional, explicit tools suited to transactional business software.</p>
+          <div class="stack-list">
+            <div><span>Frontend</span><strong>React 18 · TypeScript · Vite · TanStack Query · Zustand</strong></div>
+            <div><span>Backend</span><strong>Java 21 · Spring Boot 3.3 · Spring Data JPA · Spring Security</strong></div>
+            <div><span>Data</span><strong>PostgreSQL 16 · Redis 7.2 · Redisson · Flyway</strong></div>
+            <div><span>Integration</span><strong>REST · OpenAPI / Swagger · Domain events · UBL-TR support</strong></div>
+            <div><span>Assurance</span><strong>JWT · RBAC · BCrypt · rate limiting · structured audit logging</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section closing-section">
+        <p class="eyebrow"><span></span> SpendSync</p>
+        <h2>A clearer path from request to payment.</h2>
+        <a class="outline-link" href="setup.html">Read the setup guide <span aria-hidden="true">→</span></a>
+      </section>
+    </main>
+
+    <footer><span>SpendSync</span><span>Project overview · <span id="year"></span></span></footer>
+    <script src="js/main.js"></script>
+  </body>
+</html>

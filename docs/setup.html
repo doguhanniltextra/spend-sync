@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Local setup guide for SpendSync." />
+    <title>SpendSync | Setup Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="SpendSync overview"><span class="brand-mark">S</span> SpendSync</a>
+      <nav aria-label="Main navigation">
+        <a class="nav-link" href="index.html#overview">Overview</a>
+        <a class="nav-link" href="index.html#workflow">Workflow</a>
+        <a class="nav-link" href="index.html#architecture">Architecture</a>
+        <a class="nav-link" href="index.html#stack">Stack</a>
+      </nav>
+      <a class="source-link" href="index.html">Project overview <span aria-hidden="true">←</span></a>
+    </header>
+
+    <main id="main">
+      <section class="setup-hero section">
+        <p class="eyebrow"><span></span> Local environment</p>
+        <h1>Get SpendSync <em>running.</em></h1>
+        <p>Start the supporting services, run the Spring Boot API, then launch the React application. Each part can be run independently during development.</p>
+      </section>
+
+      <section class="section setup-section">
+        <div class="section-label"><span>01</span> Prerequisites</div>
+        <div class="setup-content">
+          <p class="section-lead">Install these tools before starting the application.</p>
+          <div class="prerequisite-grid">
+            <div><b>Java 21+</b><span>Backend runtime</span></div>
+            <div><b>Node.js 18+</b><span>Frontend runtime</span></div>
+            <div><b>Docker &amp; Compose</b><span>Local infrastructure</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section setup-section">
+        <div class="section-label"><span>02</span> Infrastructure</div>
+        <div class="setup-content">
+          <h2>Start the local services.</h2>
+          <p>The Docker Compose configuration starts PostgreSQL, Redis, and RedisInsight.</p>
+          <pre><code>docker compose -f docker/docker-compose.yml up -d</code></pre>
+          <div class="endpoint-list"><div><span>PostgreSQL</span><code>localhost:5432</code></div><div><span>Redis</span><code>localhost:6379</code></div><div><span>RedisInsight</span><code>http://localhost:5540</code></div></div>
+        </div>
+      </section>
+
+      <section class="section setup-section">
+        <div class="section-label"><span>03</span> Backend</div>
+        <div class="setup-content">
+          <h2>Launch the API.</h2>
+          <p>From the repository root, enter the backend directory and start Spring Boot.</p>
+          <pre><code>cd backend
+mvn clean spring-boot:run</code></pre>
+          <div class="endpoint-list"><div><span>API server</span><code>http://localhost:8080</code></div><div><span>Swagger UI</span><code>http://localhost:8080/swagger-ui.html</code></div><div><span>Health probe</span><code>http://localhost:8080/actuator/health</code></div></div>
+        </div>
+      </section>
+
+      <section class="section setup-section">
+        <div class="section-label"><span>04</span> Frontend</div>
+        <div class="setup-content">
+          <h2>Run the web application.</h2>
+          <p>Install the frontend dependencies once, then start Vite’s development server.</p>
+          <pre><code>cd frontend
+npm install
+npm run dev</code></pre>
+          <div class="endpoint-list"><div><span>Web application</span><code>http://localhost:5173</code></div></div>
+        </div>
+      </section>
+
+      <section class="section setup-section">
+        <div class="section-label"><span>05</span> Tests</div>
+        <div class="setup-content">
+          <h2>Run the backend test suite.</h2>
+          <p>The test command also produces a JaCoCo coverage report.</p>
+          <pre><code>cd backend
+mvn clean test</code></pre>
+          <p class="report-note">Coverage report: <code>backend/target/site/jacoco/index.html</code></p>
+        </div>
+      </section>
+
+      <section class="setup-close"><a class="outline-link" href="index.html">Back to project overview <span aria-hidden="true">←</span></a></section>
+    </main>
+    <footer><span>SpendSync</span><span>Setup guide · <span id="year"></span></span></footer>
+    <script src="js/main.js"></script>
+  </body>
+</html>
