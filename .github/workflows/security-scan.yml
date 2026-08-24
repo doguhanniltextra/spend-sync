@@ -45,7 +45,7 @@ jobs:
         shell: powershell
         run: |
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          $trivyVer = "0.59.1"
+          $trivyVer = "0.74.0"
           $url = "https://github.com/aquasecurity/trivy/releases/download/v$trivyVer/trivy_${trivyVer}_windows-64bit.zip"
           $zipPath = "$env:TEMP\trivy.zip"
           $destDir = "$env:TEMP\trivy_bin"
