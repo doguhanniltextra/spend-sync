@@ -3,8 +3,16 @@ name: Security & Vulnerability Scan
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/pom.xml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
   pull_request:
     branches: [main]
+    paths:
+      - 'backend/pom.xml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
   workflow_dispatch:
 
 jobs:
