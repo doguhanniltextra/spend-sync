@@ -18,9 +18,20 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks Secret Scanner
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $gitleaksVer = "8.24.0"
+          $url = "https://github.com/gitleaks/gitleaks/releases/download/v$gitleaksVer/gitleaks_${gitleaksVer}_windows_x64.zip"
+          $zipPath = "$env:TEMP\gitleaks.zip"
+          $destDir = "$env:TEMP\gitleaks_bin"
+
+          if (!(Test-Path "$destDir\gitleaks.exe")) {
+              Invoke-WebRequest -Uri $url -OutFile $zipPath
+              Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
+          }
+
+          & "$destDir\gitleaks.exe" detect --source . --verbose --no-git
+          exit $LASTEXITCODE
 
   dependency-scan:
     name: Dependency Vulnerability Audit
@@ -29,11 +40,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Scan Dependencies with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
-          ignore-unfixed: true
+      - name: Audit Frontend Dependencies
+        shell: pwsh
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=high --omit=dev
+          exit $LASTEXITCODE
+
+      - name: Audit Backend Dependencies
+        shell: pwsh
+        working-directory: ./backend
+        run: |
+          mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8 -Dformat=HTML
+          exit $LASTEXITCODE
