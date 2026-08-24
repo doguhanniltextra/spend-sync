@@ -18,20 +18,21 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks Secret Scanner
-        shell: pwsh
+        shell: powershell
         run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           $gitleaksVer = "8.24.0"
           $url = "https://github.com/gitleaks/gitleaks/releases/download/v$gitleaksVer/gitleaks_${gitleaksVer}_windows_x64.zip"
           $zipPath = "$env:TEMP\gitleaks.zip"
           $destDir = "$env:TEMP\gitleaks_bin"
 
           if (!(Test-Path "$destDir\gitleaks.exe")) {
-              Invoke-WebRequest -Uri $url -OutFile $zipPath
+              Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
               Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
           }
 
           & "$destDir\gitleaks.exe" detect --source . --verbose --no-git
-          exit $LASTEXITCODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   dependency-scan:
     name: Dependency Vulnerability Audit
@@ -41,15 +42,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Audit Frontend Dependencies
-        shell: pwsh
+        shell: powershell
         working-directory: ./frontend
         run: |
           npm audit --audit-level=high --omit=dev
-          exit $LASTEXITCODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Audit Backend Dependencies
-        shell: pwsh
+        shell: powershell
         working-directory: ./backend
         run: |
           mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8 -Dformat=HTML
-          exit $LASTEXITCODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
