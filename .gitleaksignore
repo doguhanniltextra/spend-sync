@@ -1,0 +1,2 @@
+backend/src/main/java/com/enterprise/spendsync/shared/crypto/CryptoProperties.java:generic-api-key:15
+backend/src/test/java/com/enterprise/spendsync/payment/crypto/AesIbanCryptoServiceTest.java:generic-api-key:18

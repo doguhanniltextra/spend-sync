@@ -31,7 +31,7 @@ jobs:
               Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
           }
 
-          & "$destDir\gitleaks.exe" detect --source . --verbose --no-git
+          & "$destDir\gitleaks.exe" detect --source . --verbose --no-git --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   dependency-scan:
@@ -41,16 +41,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Audit Frontend Dependencies
+      - name: Scan Dependencies with Trivy
         shell: powershell
-        working-directory: ./frontend
         run: |
-          npm audit --audit-level=high --omit=dev
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $trivyVer = "0.59.1"
+          $url = "https://github.com/aquasecurity/trivy/releases/download/v$trivyVer/trivy_${trivyVer}_windows-64bit.zip"
+          $zipPath = "$env:TEMP\trivy.zip"
+          $destDir = "$env:TEMP\trivy_bin"
 
-      - name: Audit Backend Dependencies
-        shell: powershell
-        working-directory: ./backend
-        run: |
-          mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=8 -Dformat=HTML
+          if (!(Test-Path "$destDir\trivy.exe")) {
+              Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+              Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
+          }
+
+          & "$destDir\trivy.exe" fs --scanners vuln --severity HIGH,CRITICAL --format table .
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

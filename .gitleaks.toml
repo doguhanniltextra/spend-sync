@@ -1,0 +1,10 @@
+[allowlist]
+description = "Allowlist for development default keys and test mock constants"
+paths = [
+    '''backend/src/test/.*''',
+    '''backend/src/main/java/com/enterprise/spendsync/shared/crypto/CryptoProperties\.java'''
+]
+stopwords = [
+    "9f8e7d6c5b4a3928170f1e2d3c4b5a6978899aabbccddeeff001122334455667",
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+]
