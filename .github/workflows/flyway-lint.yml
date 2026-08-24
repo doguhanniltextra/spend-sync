@@ -1,0 +1,60 @@
+name: Flyway Migration Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/src/main/resources/db/migration/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/main/resources/db/migration/**'
+  workflow_dispatch:
+
+jobs:
+  lint-migrations:
+    name: Validate Migration Scripts
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate SQL Naming and Invariants
+        shell: pwsh
+        working-directory: ./backend/src/main/resources/db/migration
+        run: |
+          $files = Get-ChildItem -Filter "*.sql"
+          if ($files.Count -eq 0) {
+              Write-Host "No migration files found to validate."
+              exit 0
+          }
+
+          $pattern = "^V[0-9]+(_[0-9]+)*__[a-zA-Z0-9_]+\.sql$"
+          $versions = @{}
+          $hasErrors = $false
+
+          foreach ($file in $files) {
+              if ($file.Name -notmatch $pattern) {
+                  Write-Error "Invalid migration filename format: $($file.Name). Must match 'V<version>__<description>.sql'."
+                  $hasErrors = $true
+              }
+
+              $version = ($file.Name -split "__")[0]
+              if ($versions.ContainsKey($version)) {
+                  Write-Error "Duplicate Flyway migration version detected: $version in $($file.Name) and $($versions[$version])."
+                  $hasErrors = $true
+              } else {
+                  $versions[$version] = $file.Name
+              }
+
+              if ($file.Length -eq 0) {
+                  Write-Error "Migration file is empty: $($file.Name)."
+                  $hasErrors = $true
+              }
+          }
+
+          if ($hasErrors) {
+              exit 1
+          }
+
+          Write-Host "All $($files.Count) Flyway migration scripts passed validation."
