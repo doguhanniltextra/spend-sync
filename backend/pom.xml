@@ -61,6 +61,12 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Spring Boot Actuator for Health Probes & Metrics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- PostgreSQL JDBC Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
