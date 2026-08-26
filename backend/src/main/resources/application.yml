@@ -19,7 +19,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
-    out-of-order: true
+    out-of-order: false          # Enforced: migration ordering must be deterministic
+    validate-on-migrate: true   # Fail-fast: checksum mismatch causes startup to abort
     locations: classpath:db/migration
 
   jpa:
