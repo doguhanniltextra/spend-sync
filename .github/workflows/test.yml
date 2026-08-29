@@ -55,6 +55,8 @@ jobs:
               - 'backend/src/**/analytics/**'
             audit:
               - 'backend/src/**/audit/**'
+            notification:
+              - 'backend/src/**/notification/**'
 
   test:
     name: Run Targeted Tests
