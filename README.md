@@ -40,6 +40,7 @@ graph TB
             M_CAT["Catalog & Purchasing"]
             M_RCV["Receiving & 3-Way Match"]
             M_PAY["Payment & Invoices"]
+            M_NTF["Notification Engine (In-App / Email)"]
             M_GOV["Audit & Analytics"]
         end
 
@@ -109,10 +110,11 @@ sequenceDiagram
 | Layer | Technologies |
 | :--- | :--- |
 | **Backend Framework** | Java 21, Spring Boot 3.3.0, Spring Data JPA, Spring Security, Spring AOP |
+| **Notifications & Mail** | Jakarta Mail, JavaMailSender, Thymeleaf Template Engine, Spring Scheduling |
 | **In-Memory & Caching** | Redis 7.2, Redisson 3.31.0, Spring Data Redis, Jackson2 JSON Serializer |
-| **Persistence** | PostgreSQL 16, Hibernate 6, HikariCP |
+| **Persistence** | PostgreSQL 16, Hibernate 6, HikariCP, Flyway |
 | **Security & Rate Limiting** | JWT (JJWT), BCrypt, RBAC, Redis ZSet Sliding Window Rate Limiting |
-| **Events** | Spring Domain Events (`ApplicationEventPublisher`) |
+| **Events** | Spring Domain Events (`ApplicationEventPublisher`, `@TransactionalEventListener`) |
 | **API & Documentation** | SpringDoc OpenAPI 2.5, Swagger UI, Bean Validation |
 | **Frontend Framework** | React 18.3, TypeScript 5.5, Vite 5.4 |
 | **State & Styling** | TanStack React Query v5, Zustand, TailwindCSS, Lucide Icons, Axios |
@@ -127,7 +129,7 @@ sequenceDiagram
 
 
 
-The backend test suite contains **512 automated tests** executed via JUnit 5, Mockito, and Testcontainers (PostgreSQL 16 & Kafka). All boilerplate artifacts (Entities, DTOs, Configurations) are excluded to reflect pure domain logic.
+The backend test suite contains **577 automated tests** executed via JUnit 5, Mockito, and Testcontainers (PostgreSQL 16 & Redis 7.2). All boilerplate artifacts (Entities, DTOs, Configurations) are excluded to reflect pure domain logic.
 
 | Metric | Measured Value | Covered / Total Units | Scope |
 | :--- | :--- | :--- | :--- |
