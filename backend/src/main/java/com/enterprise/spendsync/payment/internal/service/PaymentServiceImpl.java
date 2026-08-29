@@ -23,7 +23,7 @@ import com.enterprise.spendsync.payment.internal.event.PaymentItemPayload;
 import com.enterprise.spendsync.payment.internal.repository.PaymentBatchItemRepository;
 import com.enterprise.spendsync.payment.internal.repository.PaymentBatchRepository;
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
-import com.enterprise.spendsync.shared.notification.EmailService;
+import com.enterprise.spendsync.notification.internal.service.EmailService;
 import com.enterprise.spendsync.shared.security.UserPrincipal;
 import com.enterprise.spendsync.shared.tenant.TenantContext;
 import org.slf4j.Logger;

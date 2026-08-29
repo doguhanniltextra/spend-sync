@@ -196,6 +196,25 @@ public class RequisitionServiceImpl implements RequisitionService {
                 "PR Initial Reservation: " + savedPr.getRequisitionNumber()
         );
 
+        // 7. Publish PrApprovalRequestedEvent for the first pending approver
+        steps.stream()
+                .filter(s -> s.getStatus() == ApprovalStepStatus.PENDING)
+                .findFirst()
+                .ifPresent(firstStep -> eventPublisher.publishEvent(
+                        com.enterprise.spendsync.notification.api.event.PrApprovalRequestedEvent.of(
+                                tenantId,
+                                savedPr.getId(),
+                                savedPr.getRequisitionNumber(),
+                                currentUser.getId(),
+                                currentUser.getFirstName() + " " + currentUser.getLastName(),
+                                firstStep.getApprover().getId(),
+                                firstStep.getStepOrder(),
+                                savedPr.getTotalAmount(),
+                                savedPr.getCurrency(),
+                                savedPr.getTitle()
+                        )
+                ));
+
         return mapToDetailResponse(savedPr);
     }
 
@@ -296,6 +315,21 @@ public class RequisitionServiceImpl implements RequisitionService {
             RequisitionApprovalStep nextStep = nextStepOpt.get();
             nextStep.setStatus(ApprovalStepStatus.PENDING);
             approvalStepRepository.save(nextStep);
+
+            eventPublisher.publishEvent(
+                    com.enterprise.spendsync.notification.api.event.PrApprovalRequestedEvent.of(
+                            tenantId,
+                            pr.getId(),
+                            pr.getRequisitionNumber(),
+                            pr.getRequisitioner().getId(),
+                            pr.getRequisitioner().getFirstName() + " " + pr.getRequisitioner().getLastName(),
+                            nextStep.getApprover().getId(),
+                            nextStep.getStepOrder(),
+                            pr.getTotalAmount(),
+                            pr.getCurrency(),
+                            pr.getTitle()
+                    )
+            );
         } else {
             pr.setStatus(RequisitionStatus.APPROVED);
             pr.setApprovedAt(Instant.now());

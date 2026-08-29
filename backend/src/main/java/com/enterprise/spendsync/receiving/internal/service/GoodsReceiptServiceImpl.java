@@ -22,7 +22,7 @@ import com.enterprise.spendsync.receiving.internal.event.GoodsReceivedEvent;
 import com.enterprise.spendsync.receiving.internal.repository.GoodsReceiptLineItemRepository;
 import com.enterprise.spendsync.receiving.internal.repository.GoodsReceiptRepository;
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
-import com.enterprise.spendsync.shared.notification.EmailService;
+import com.enterprise.spendsync.notification.internal.service.EmailService;
 import com.enterprise.spendsync.shared.security.UserPrincipal;
 import com.enterprise.spendsync.shared.tenant.TenantContext;
 import org.slf4j.Logger;

@@ -1,6 +1,6 @@
 package com.enterprise.spendsync.core.internal.event;
 
-import com.enterprise.spendsync.shared.notification.EmailService;
+import com.enterprise.spendsync.notification.internal.service.EmailService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

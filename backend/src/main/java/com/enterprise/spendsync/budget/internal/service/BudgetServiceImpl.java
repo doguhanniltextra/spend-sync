@@ -41,17 +41,20 @@ public class BudgetServiceImpl implements BudgetService {
     private final CostCenterRepository costCenterRepository;
     private final LegalEntityRepository legalEntityRepository;
     private final TenantRepository tenantRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     public BudgetServiceImpl(BudgetPoolRepository budgetPoolRepository,
                              BudgetTransactionRepository budgetTransactionRepository,
                              CostCenterRepository costCenterRepository,
                              LegalEntityRepository legalEntityRepository,
-                             TenantRepository tenantRepository) {
+                             TenantRepository tenantRepository,
+                             org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.budgetPoolRepository = budgetPoolRepository;
         this.budgetTransactionRepository = budgetTransactionRepository;
         this.costCenterRepository = costCenterRepository;
         this.legalEntityRepository = legalEntityRepository;
         this.tenantRepository = tenantRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -283,6 +286,8 @@ public class BudgetServiceImpl implements BudgetService {
         );
         budgetTransactionRepository.save(tx);
 
+        checkAndPublishBudgetThresholdAlerts(pool, tenantId);
+
         return BudgetReservationResult.success(
                 pool.getId(),
                 isOverrun,
@@ -361,7 +366,46 @@ public class BudgetServiceImpl implements BudgetService {
         );
         budgetTransactionRepository.save(tx);
 
+        checkAndPublishBudgetThresholdAlerts(updated, tenantId);
+
         return BudgetPoolResponse.from(updated);
+    }
+
+    private void checkAndPublishBudgetThresholdAlerts(BudgetPool pool, UUID tenantId) {
+        if (pool.getAllocatedAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        BigDecimal totalCommitted = pool.getSpentAmount().add(pool.getReservedAmount());
+        double ratio = totalCommitted.divide(pool.getAllocatedAmount(), 4, java.math.RoundingMode.HALF_UP).doubleValue() * 100.0;
+
+        int threshold = 0;
+        if (ratio >= 95.0) {
+            threshold = 95;
+        } else if (ratio >= 80.0) {
+            threshold = 80;
+        }
+
+        if (threshold > 0 && eventPublisher != null) {
+            String costCenterName = pool.getCostCenter() != null ? pool.getCostCenter().getName() : "General";
+            UUID costCenterId = pool.getCostCenter() != null ? pool.getCostCenter().getId() : null;
+
+            eventPublisher.publishEvent(
+                    com.enterprise.spendsync.notification.api.event.BudgetThresholdExceededEvent.of(
+                            tenantId,
+                            pool.getId(),
+                            costCenterId,
+                            costCenterName,
+                            pool.getFiscalYear(),
+                            pool.getAllocatedAmount(),
+                            pool.getSpentAmount(),
+                            pool.getReservedAmount(),
+                            ratio,
+                            threshold,
+                            pool.getCurrency()
+                    )
+            );
+        }
     }
 
     @Override
