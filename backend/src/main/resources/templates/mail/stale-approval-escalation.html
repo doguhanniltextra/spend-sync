@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Urgent Escalation: Pending Requisition Approval</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .header { background: #991b1b; color: #ffffff; padding: 24px; text-align: center; }
+        .header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+        .content { padding: 32px 24px; }
+        .badge { display: inline-block; padding: 4px 12px; background: #fee2e2; color: #991b1b; font-weight: 600; border-radius: 9999px; font-size: 13px; margin-bottom: 16px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 20px 0; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .label { color: #64748b; }
+        .value { font-weight: 600; color: #0f172a; }
+        .btn { display: inline-block; width: 100%; text-align: center; background: #dc2626; color: #ffffff !important; padding: 12px 0; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; margin-top: 16px; }
+        .footer { background: #f1f5f9; padding: 16px 24px; text-align: center; font-size: 12px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>SpendSync Approval Escalation</h1>
+    </div>
+    <div class="content">
+        <span class="badge">48+ HOURS STALE APPROVAL</span>
+        <h2 style="margin-top: 0; font-size: 18px; color: #0f172a;">Approval Escalation Notice</h2>
+        <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+            Purchase requisition <strong th:text="${prNumber}">PR-2026-0001</strong> assigned to <strong th:text="${approverName}">Approver</strong> has been pending approval for more than 48 hours without decision.
+        </p>
+
+        <div class="card">
+            <div class="row">
+                <span class="label">Requisition:</span>
+                <span class="value" th:text="${prNumber}">PR-2026-0001</span>
+            </div>
+            <div class="row">
+                <span class="label">Pending Approver:</span>
+                <span class="value" th:text="${approverName}">John Doe</span>
+            </div>
+            <div class="row" style="margin-bottom: 0;">
+                <span class="label">Total Amount:</span>
+                <span class="value" style="color: #991b1b; font-size: 16px;" th:text="${totalAmount}">50,000.00 USD</span>
+            </div>
+        </div>
+
+        <a class="btn" th:href="${actionUrl}">Review & Expedite Requisition</a>
+    </div>
+    <div class="footer">
+        <p>SpendSync Automated Approval SLA Monitor</p>
+    </div>
+</div>
+</body>
+</html>

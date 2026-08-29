@@ -208,4 +208,13 @@ public final class Endpoints {
         public static final String CATALOG_BASE = BASE + "/catalog";
         public static final String CATALOG_PROPOSALS = "/proposals";
     }
+
+    public static final class Notification {
+        public static final String BASE = API_V1 + "/notifications";
+        public static final String NOTIFICATION_BY_ID = "/{id}";
+        public static final String MARK_READ = "/{id}/read";
+        public static final String MARK_ALL_READ = "/read-all";
+        public static final String UNREAD_COUNT = "/count/unread";
+        public static final String PREFERENCES = "/preferences";
+    }
 }

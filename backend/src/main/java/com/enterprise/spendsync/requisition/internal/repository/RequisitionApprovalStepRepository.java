@@ -30,4 +30,17 @@ public interface RequisitionApprovalStepRepository extends JpaRepository<Requisi
             @Param("approverId") UUID approverId,
             @Param("tenantId") UUID tenantId
     );
+
+    @Query("""
+        SELECT step FROM RequisitionApprovalStep step
+        JOIN FETCH step.requisition req
+        JOIN FETCH step.approver app
+        JOIN FETCH step.tenant t
+        WHERE step.status = 'PENDING'
+          AND req.status = 'PENDING_APPROVAL'
+          AND step.createdAt < :cutoffTime
+        ORDER BY step.createdAt ASC
+    """)
+    List<RequisitionApprovalStep> findStalePendingSteps(@Param("cutoffTime") java.time.Instant cutoffTime);
 }
+

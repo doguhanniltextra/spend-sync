@@ -1,4 +1,4 @@
-package com.enterprise.spendsync.shared.notification;
+package com.enterprise.spendsync.notification.internal.service;
 
 import java.util.Map;
 
