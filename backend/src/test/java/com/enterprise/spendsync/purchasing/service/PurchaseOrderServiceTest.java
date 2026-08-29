@@ -25,7 +25,7 @@ import com.enterprise.spendsync.requisition.internal.repository.PurchaseRequisit
 import com.enterprise.spendsync.shared.domain.CrossAssignmentDetector;
 import com.enterprise.spendsync.shared.domain.CrossAssignmentWarning;
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
-import com.enterprise.spendsync.shared.notification.EmailService;
+import com.enterprise.spendsync.notification.internal.service.EmailService;
 import com.enterprise.spendsync.shared.security.UserPrincipal;
 import com.enterprise.spendsync.shared.tenant.TenantContext;
 import org.junit.jupiter.api.AfterEach;

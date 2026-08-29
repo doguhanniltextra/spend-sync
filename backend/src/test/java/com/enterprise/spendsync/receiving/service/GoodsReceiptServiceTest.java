@@ -28,7 +28,7 @@ import com.enterprise.spendsync.receiving.internal.service.GoodsReceiptServiceIm
 import com.enterprise.spendsync.requisition.internal.domain.PurchaseRequisition;
 import com.enterprise.spendsync.requisition.internal.domain.RequisitionStatus;
 import com.enterprise.spendsync.shared.exception.SpendSyncException;
-import com.enterprise.spendsync.shared.notification.EmailService;
+import com.enterprise.spendsync.notification.internal.service.EmailService;
 import com.enterprise.spendsync.shared.security.UserPrincipal;
 import com.enterprise.spendsync.shared.tenant.TenantContext;
 import org.junit.jupiter.api.AfterEach;
