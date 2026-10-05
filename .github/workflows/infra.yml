@@ -10,6 +10,12 @@ on:
     paths:
       - 'infra/**'
   workflow_dispatch:
+    inputs:
+      apply_changes:
+        description: 'Apply Terraform changes to AWS environment?'
+        type: boolean
+        required: true
+        default: false
 
 concurrency:
   group: terraform-dev
@@ -71,7 +77,6 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           script: |
-            const fs = require('fs');
             const output = `#### Terraform Format & Style 🖌 \`success\`
             #### Terraform Initialization ⚙️ \`success\`
             #### Terraform Validation 🤖 \`success\`
@@ -86,6 +91,6 @@ jobs:
               body: output
             })
 
-      - name: Terraform Apply (Main Branch Only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Terraform Apply (Explicit Confirmation Only)
+        if: github.event_name == 'workflow_dispatch' && inputs.apply_changes == true
         run: terraform apply -auto-approve dev.tfplan

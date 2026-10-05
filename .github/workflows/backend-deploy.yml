@@ -2,13 +2,13 @@ name: Backend CI/CD & ECS Fargate Deployment
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'backend/**'
+    tags:
+      - 'v*.*.*'
+      - 'v*'
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: 'Yayınlanacak Özel Git Commit SHA veya Tag (Boş bırakılırsa HEAD kullanılır)'
+        description: 'Specific Git Commit SHA or Tag to deploy (defaults to HEAD if empty)'
         required: false
         default: ''
 
@@ -33,7 +33,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-
 
       - name: Run Unit Tests
         run: mvn clean test -B -Dtest="!*ContainerTest"
@@ -81,8 +80,13 @@ jobs:
       - name: Determine Image Tag
         id: image-tag
         run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG=$(git rev-parse --short HEAD)
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Determined image tag: ${TAG}"
 
       - name: Build and Push ARM64 Docker Image to ECR
         uses: docker/build-push-action@v5
@@ -125,16 +129,65 @@ jobs:
           echo "Verifying application health via Load Balancer..."
           ALB_URL="http://${{ vars.ALB_DNS_NAME }}/actuator/health"
           
-          # Retry loop (max 6 attempts, 10 seconds interval)
-          for i in {1..6}; do
+          # Retry loop (max 10 attempts, 10 seconds interval)
+          for i in {1..10}; do
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$ALB_URL" || true)
             if [ "$HTTP_STATUS" -eq 200 ]; then
               echo "✅ Health check PASSED! HTTP Status: 200 OK"
-              exit 0
+              break
             fi
             echo "Attempt $i: Health check returned $HTTP_STATUS. Waiting 10s..."
             sleep 10
+            if [ $i -eq 10 ]; then
+              echo "❌ Health check FAILED! Application did not respond with 200 OK."
+              exit 1
+            fi
           done
+
+      - name: Automated Post-Deploy Smoke Test (API Verification)
+        run: |
+          echo "🚀 Running Post-Deploy Smoke Tests on live endpoints..."
+          ALB_HOST="${{ vars.ALB_DNS_NAME }}"
           
-          echo "❌ Health check FAILED! Application did not respond with 200 OK."
-          exit 1
+          # 1. Login and get JWT token
+          LOGIN_PAYLOAD='{"email":"cfo@spendsync.com","password":"Password123!"}'
+          LOGIN_RESP=$(curl -s -w "\n%{http_code}" -X POST "http://${ALB_HOST}/api/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "${LOGIN_PAYLOAD}")
+          
+          HTTP_BODY=$(echo "$LOGIN_RESP" | sed '$d')
+          HTTP_STATUS=$(echo "$LOGIN_RESP" | tail -n1)
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "❌ Smoke Test FAILED: Login endpoint returned HTTP ${HTTP_STATUS}"
+            echo "Response: ${HTTP_BODY}"
+            exit 1
+          fi
+          
+          TOKEN=$(echo "$HTTP_BODY" | jq -r '.accessToken // empty')
+          if [ -z "$TOKEN" ]; then
+            echo "❌ Smoke Test FAILED: No accessToken found in login response"
+            exit 1
+          fi
+          echo "✅ Authentication successful. JWT Bearer token obtained."
+          
+          # 2. Check Budget Summary endpoint
+          BUDGET_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "http://${ALB_HOST}/api/v1/budget/summary" \
+            -H "Authorization: Bearer ${TOKEN}")
+          
+          if [ "$BUDGET_STATUS" -ne 200 ]; then
+            echo "❌ Smoke Test FAILED: Budget summary endpoint returned HTTP ${BUDGET_STATUS}"
+            exit 1
+          fi
+          echo "✅ Budget Summary API verified (HTTP 200 OK)."
+          
+          # 3. Check Intelligence Pulse endpoint
+          PULSE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "http://${ALB_HOST}/api/v1/intelligence/pulse" \
+            -H "Authorization: Bearer ${TOKEN}")
+          
+          if [ "$PULSE_STATUS" -ne 200 ]; then
+            echo "❌ Smoke Test FAILED: Intelligence pulse endpoint returned HTTP ${PULSE_STATUS}"
+            exit 1
+          fi
+          echo "✅ Intelligence Pulse API verified (HTTP 200 OK)."
+          echo "🎉 All Post-Deploy Smoke Tests PASSED successfully!"

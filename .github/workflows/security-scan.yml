@@ -1,43 +1,32 @@
-name: Security & Vulnerability Scan
+name: Security & Secret Leak Detection
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'backend/pom.xml'
-      - 'frontend/package.json'
-      - 'frontend/package-lock.json'
+    branches: ['**']
   pull_request:
-    branches: [main]
-    paths:
-      - 'backend/pom.xml'
-      - 'frontend/package.json'
-      - 'frontend/package-lock.json'
+    branches: ['**']
   workflow_dispatch:
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   secret-scan:
-    name: Secret Leak Detection
+    name: Gitleaks Secret Leak Detection
     runs-on: self-hosted
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Secret Scan Status
+      - name: Run Gitleaks Secret Detection
         shell: bash
         run: |
-          echo "Secret scan check completed."
-
-  dependency-scan:
-    name: Dependency Vulnerability Audit
-    runs-on: self-hosted
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Scan Dependencies
-        shell: bash
-        run: |
-          echo "Dependency vulnerability check completed."
+          echo "🔍 Scanning git history and repository for leaked secrets and credentials..."
+          docker run --rm -v "$GITHUB_WORKSPACE:/path" zricethezav/gitleaks:latest detect \
+            --source="/path" \
+            --verbose \
+            --config="/path/.gitleaks.toml"
+          echo "✅ Gitleaks scan passed. No exposed secrets detected."
