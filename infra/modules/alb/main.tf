@@ -20,11 +20,12 @@ resource "aws_lb" "main" {
 
 # Target Group (target_type = "ip" for ECS Fargate awsvpc mode)
 resource "aws_lb_target_group" "backend" {
-  name        = "spendsync-${var.environment}-tg"
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
+  name                 = "spendsync-${var.environment}-tg"
+  port                 = 8080
+  protocol             = "HTTP"
+  vpc_id               = var.vpc_id
+  target_type          = "ip"
+  deregistration_delay = 15
 
   health_check {
     enabled             = true
