@@ -33,7 +33,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
+
 
       - name: Run Unit Tests
         run: mvn clean test -B -Dtest="!*ContainerTest"
