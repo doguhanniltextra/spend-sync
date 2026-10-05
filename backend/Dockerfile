@@ -34,9 +34,9 @@ COPY --from=extractor --chown=appuser:appgroup /extracted/snapshot-dependencies/
 # 4. Uygulama sınıfları (Sadece sizin kodunuz - Saniyeler içinde değişip build olur)
 COPY --from=extractor --chown=appuser:appgroup /extracted/application/ ./
 
-# JVM Performans & Bellek Ergonomisi (Java 21 ZGC & Container Resource Limits)
+# JVM Performans & Bellek Ergonomisi (Fargate 0.5-1.0 vCPU / 1GB RAM optimize G1GC & Container Resource Limits)
 ENV JAVA_TOOL_OPTIONS="\
-  -XX:+UseZGC \
+  -XX:+UseG1GC \
   -XX:MaxRAMPercentage=75.0 \
   -XX:InitialRAMPercentage=50.0 \
   -XX:+ExitOnOutOfMemoryError \

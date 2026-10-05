@@ -29,10 +29,15 @@ public class SecurityConfig {
 
     private final TenantFilter tenantFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final List<String> allowedOrigins;
 
-    public SecurityConfig(TenantFilter tenantFilter, JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            TenantFilter tenantFilter,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @org.springframework.beans.factory.annotation.Value("${spendsync.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}") List<String> allowedOrigins) {
         this.tenantFilter = tenantFilter;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
@@ -43,7 +48,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Tenant-Id", "Accept", "Origin", "X-Requested-With"));
         config.setExposedHeaders(List.of("Authorization", "X-Tenant-Id"));

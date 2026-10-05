@@ -69,3 +69,13 @@ postgres_data/
 kafka_data/
 scratch/
 actions-runner/
+**/actions-runner/
+
+
+# ── Terraform ──
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+

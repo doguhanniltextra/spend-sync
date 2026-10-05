@@ -11,9 +11,9 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:spendsync_secret}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 30000
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
 
   flyway:
     enabled: true
@@ -21,7 +21,7 @@ spring:
     baseline-version: 0
     out-of-order: false          # Enforced: migration ordering must be deterministic
     validate-on-migrate: true   # Fail-fast: checksum mismatch causes startup to abort
-    locations: classpath:db/migration
+    locations: classpath:db/migration,${FLYWAY_ADDITIONAL_LOCATIONS:classpath:db/seed}
 
   jpa:
     hibernate:
@@ -37,10 +37,13 @@ spring:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
-      timeout: 2000ms
+      # Leave password unset for local Redis (no AUTH). Override via SPRING_DATA_REDIS_PASSWORD in AWS.
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout: ${REDIS_TIMEOUT:2000ms}
       lettuce:
         pool:
-          max-active: 16
+          max-active: ${REDIS_POOL_MAX_ACTIVE:16}
           max-idle: 8
           min-idle: 2
           max-wait: 2000ms
@@ -69,8 +72,11 @@ management:
         enabled: true
 
 spendsync:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   jwt:
     # 512-bit base64 secret (HS512) for secure JWT signing
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351655468576D5A7134743777217A25432A}
-    access-token-expiry-seconds: 900 # 15 minutes
-    refresh-token-expiry-days: 7 # 7 days
+    access-token-expiry-seconds: ${JWT_ACCESS_TOKEN_EXPIRY:900} # 15 minutes
+    refresh-token-expiry-days: ${JWT_REFRESH_TOKEN_EXPIRY:7} # 7 days
+

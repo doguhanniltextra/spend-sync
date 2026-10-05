@@ -1,0 +1,16 @@
+# SpendSync Production Spring Boot Profile (ECS Fargate / AWS)
+spring:
+  flyway:
+    # Production veritabanında sadece DDL migration'ları çalıştırılır; test/mock seed verileri yüklenmez.
+    locations: classpath:db/migration
+  jpa:
+    show-sql: false
+  data:
+    redis:
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true} # AWS Valkey Serverless TLS default true
+
+management:
+  endpoint:
+    health:
+      show-details: when_authorized
