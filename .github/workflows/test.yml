@@ -67,34 +67,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Execute Targeted Tests
-        shell: powershell
+        shell: bash
         working-directory: ./backend
         run: |
-          $isManual = "${{ github.event_name }}" -eq "workflow_dispatch"
-          $isShared = "${{ needs.filter.outputs.shared }}" -eq "true"
-          
-          if ($isManual -or $isShared) {
-              Write-Host ">> Core/Shared changes detected. Running full unit test suite..." -ForegroundColor Cyan
-              mvn test -Dtest="!*ContainerTest"
-              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-              exit 0
-          }
-          
-          $changedModules = '${{ needs.filter.outputs.modules }}' | ConvertFrom-Json
-          $testPatterns = @()
-          
-          foreach ($mod in $changedModules) {
-              if ($mod -ne "shared") {
-                  $testPatterns += "com.enterprise.spendsync.$mod.**"
-              }
-          }
-          
-          if ($testPatterns.Count -eq 0) {
-              Write-Host ">> No module-level test execution required. Skipping." -ForegroundColor Green
-              exit 0
-          }
-          
-          $filterArg = ($testPatterns -join ",")
-          Write-Host ">> Running tests for targeted modules: $filterArg" -ForegroundColor Yellow
-          mvn test -Dtest="$filterArg"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          echo "Running unit tests for backend..."
+          mvn test -Dtest="!*ContainerTest"
