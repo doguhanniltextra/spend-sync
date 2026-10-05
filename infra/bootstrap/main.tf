@@ -110,7 +110,7 @@ resource "aws_iam_access_key" "github_deployer_key" {
   user = aws_iam_user.github_deployer.name
 }
 
-# IAM User Policy: Least-privilege policy restricting CI/CD permissions to required operations.
+# IAM User Policy: Full deployment privileges for Terraform Infrastructure and ECS CI/CD management.
 resource "aws_iam_user_policy" "github_deployer_policy" {
   name = "spendsync-github-deployer-policy"
   user = aws_iam_user.github_deployer.name
@@ -118,67 +118,10 @@ resource "aws_iam_user_policy" "github_deployer_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # 1. ECR Authorization Token Retrieval (Global ECR API requirement)
       {
         Effect   = "Allow"
-        Action   = ["ecr:GetAuthorizationToken"]
+        Action   = "*"
         Resource = "*"
-      },
-      # 2. ECR Repository Scoped Push/Pull Operations
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:PutImage"
-        ]
-        Resource = aws_ecr_repository.backend.arn
-      },
-      # 3. S3 Remote State Bucket Management
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:ListBucket",
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          aws_s3_bucket.tf_state.arn,
-          "${aws_s3_bucket.tf_state.arn}/*"
-        ]
-      },
-      # 4. ECS Service & Task Definition Deployment Rights
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:RegisterTaskDefinition",
-          "ecs:DescribeTaskDefinition",
-          "ecs:UpdateService",
-          "ecs:DescribeServices"
-        ]
-        Resource = "*"
-      },
-      # 5. Scoped iam:PassRole (Prevents privilege escalation by restricting passed roles to spendsync-* for ecs-tasks)
-      {
-        Effect   = "Allow"
-        Action   = ["iam:PassRole"]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/spendsync-*"
-        Condition = {
-          StringEquals = {
-            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
-          }
-        }
-      },
-      # 6. SSM Parameter Store Read Access (Allows reading /spendsync/dev/* for ECS container environment secrets)
-      {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameters", "ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/spendsync/dev/*"
       }
     ]
   })
@@ -193,7 +136,7 @@ resource "aws_iam_user_policy" "github_deployer_policy" {
 # scan_on_push = true -> Automatically scans pushed Docker images for security vulnerabilities.
 resource "aws_ecr_repository" "backend" {
   name                 = "spendsync-backend"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
