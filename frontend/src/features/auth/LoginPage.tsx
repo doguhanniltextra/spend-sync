@@ -45,7 +45,12 @@ export default function LoginPage() {
       }
       navigate(ROUTES.dashboard, { replace: true })
     } catch (err: unknown) {
-      setServerError(MESSAGES.auth.loginError)
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } }
+        setServerError(axiosErr.response?.data?.message || MESSAGES.auth.loginError)
+      } else {
+        setServerError(MESSAGES.auth.loginError)
+      }
     }
   }
 
