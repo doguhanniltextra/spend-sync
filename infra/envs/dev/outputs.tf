@@ -108,6 +108,23 @@ output "ecs_cloudwatch_log_group_name" {
   description = "CloudWatch Log Group Name for ECS container logs"
 }
 
+# Frontend S3 & CloudFront Outputs (AWS-07)
+output "frontend_s3_bucket" {
+  value       = module.frontend.bucket_name
+  description = "The S3 bucket hosting frontend static assets"
+}
 
+output "cloudfront_distribution_id" {
+  value       = module.frontend.cloudfront_distribution_id
+  description = "The CloudFront distribution ID"
+}
 
+output "cloudfront_domain_name" {
+  value       = module.frontend.cloudfront_domain_name
+  description = "The CloudFront distribution domain name"
+}
 
+output "frontend_url" {
+  value       = module.frontend.frontend_url
+  description = "The public HTTPS URL to access the SpendSync frontend application"
+}

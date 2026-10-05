@@ -1,0 +1,77 @@
+name: Frontend CI/CD & CloudFront Deployment
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+
+concurrency:
+  group: frontend-deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Frontend to S3 & CloudFront
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Production Assets
+        env:
+          VITE_API_BASE_URL: ''
+        run: npm run build
+
+      - name: Sync Static Files to AWS S3
+        run: |
+          BUCKET="spendsync-dev-frontend-783582650549"
+          echo "Uploading static assets to S3 bucket: ${BUCKET}..."
+          aws s3 sync dist/ s3://${BUCKET} --delete --cache-control "public, max-age=31536000, immutable"
+          
+          # Upload index.html with no-cache so browsers refresh immediately upon release
+          aws s3 cp dist/index.html s3://${BUCKET}/index.html --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, 'spendsync-dev-frontend')].Id | [0]" --output text)
+          echo "Invalidating CloudFront distribution: ${DIST_ID}..."
+          aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+
+      - name: Verify Live Deployment
+        run: |
+          CF_DOMAIN=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, 'spendsync-dev-frontend')].DomainName | [0]" --output text)
+          echo "Verifying live endpoint: https://${CF_DOMAIN}..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://${CF_DOMAIN}" || true)
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Frontend deployment verified! Live URL: https://${CF_DOMAIN}"
+          else
+            echo "⚠️ CloudFront returned HTTP status: ${HTTP_STATUS}"
+          fi

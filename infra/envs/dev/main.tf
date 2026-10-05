@@ -55,6 +55,13 @@ module "ecs" {
   environment           = var.environment
 }
 
+# Caller identity for account ID
+data "aws_caller_identity" "current" {}
 
-
-
+# 7. Frontend S3 & CloudFront Module (AWS-07)
+module "frontend" {
+  source         = "../../modules/frontend"
+  environment    = var.environment
+  aws_account_id = data.aws_caller_identity.current.account_id
+  alb_dns_name   = module.alb.alb_dns_name
+}
