@@ -59,22 +59,32 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (response: AuthTokenResponse) => {
+        let roles: string[] = []
+        if (Array.isArray(response?.roles)) {
+          roles = response.roles
+        } else if (response?.roles && typeof (response.roles as any)[Symbol.iterator] === 'function') {
+          roles = Array.from(response.roles)
+        }
+
+        const userId = response?.userId || (response as any)?.id
+        const tenantId = response?.tenantId || (response as any)?.tenant_id
+        const fullName = response?.fullName || (response as any)?.name || 'User'
+        const email = response?.email || ''
+
         set({
-          accessToken:     response.accessToken,
-          refreshToken:    response.refreshToken,
+          accessToken:     response?.accessToken || (response as any)?.access_token || null,
+          refreshToken:    response?.refreshToken || (response as any)?.refresh_token || null,
           isAuthenticated: true,
           user: {
-            id:       response.userId,
-            email:    response.email,
-            fullName: response.fullName,
-            tenantId: response.tenantId,
-            roles:    Array.isArray(response.roles)
-              ? response.roles
-              : Array.from(response.roles as unknown as Set<string>),
+            id:       userId,
+            email,
+            fullName,
+            tenantId,
+            roles,
           },
         })
-        if (response.tenantId) {
-          useTenantStore.getState().setTenant(response.tenantId)
+        if (tenantId) {
+          useTenantStore.getState().setTenant(tenantId)
         }
       },
 
@@ -90,7 +100,7 @@ export const useAuthStore = create<AuthState>()(
 
       hasRole: (role: string) => {
         const { user } = get()
-        if (!user) return false
+        if (!user || !Array.isArray(user.roles)) return false
         const normalizedRole = role.replace(/^ROLE_/, '')
         return user.roles.some(
           (r) =>
@@ -109,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
        */
       hasPermission: (permission: string) => {
         const { user } = get()
-        if (!user) return false
+        if (!user || !Array.isArray(user.roles)) return false
 
         // Superusers have full access
         const isSuperUser = user.roles.some(

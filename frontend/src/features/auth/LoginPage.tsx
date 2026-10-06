@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useTenantStore } from '@/store/useTenantStore'
 import { MESSAGES } from '@/constants/messages'
 import { ROUTES } from '@/constants/routes'
+import type { AuthTokenResponse } from '@/types/auth.types'
 
 const loginSchema = z.object({
   email: z.string().min(1, MESSAGES.common.requiredField).email(MESSAGES.common.invalidEmail),
@@ -19,9 +20,17 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const setAuth = useAuthStore((s) => s.setAuth)
   const setTenant = useTenantStore((s) => s.setTenant)
   const [serverError, setServerError] = useState<string | null>(null)
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(ROUTES.dashboard, { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const {
     register,
@@ -36,21 +45,36 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (values: LoginFormValues) => {
+    setServerError(null)
+    let loginData: AuthTokenResponse | null = null
+
+    // 1. Authenticate with backend API
     try {
-      setServerError(null)
-      const res = await authApi.login(values)
-      setAuth(res)
-      if (res.tenantId) {
-        setTenant(res.tenantId)
-      }
-      navigate(ROUTES.dashboard, { replace: true })
+      loginData = await authApi.login(values)
     } catch (err: unknown) {
+      console.error('Login API error:', err)
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosErr = err as { response?: { data?: { message?: string } } }
         setServerError(axiosErr.response?.data?.message || MESSAGES.auth.loginError)
       } else {
         setServerError(MESSAGES.auth.loginError)
       }
+      return
+    }
+
+    // 2. Hydrate auth state and navigate to dashboard
+    try {
+      if (loginData) {
+        setAuth(loginData)
+        if (loginData.tenantId) {
+          setTenant(loginData.tenantId)
+        }
+        navigate(ROUTES.dashboard, { replace: true })
+      }
+    } catch (err: unknown) {
+      console.error('Post-login navigation/store error:', err)
+      // Fallback: hard navigate to dashboard
+      window.location.href = ROUTES.dashboard
     }
   }
 
