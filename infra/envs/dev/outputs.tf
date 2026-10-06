@@ -128,3 +128,34 @@ output "frontend_url" {
   value       = module.frontend.frontend_url
   description = "The public HTTPS URL to access the SpendSync frontend application"
 }
+
+# Observability & Monitoring Outputs (AWS Observability - Faz 04)
+output "monitoring_efs_id" {
+  value       = module.monitoring.efs_file_system_id
+  description = "EFS File System ID for Prometheus and Grafana storage"
+}
+
+output "prometheus_service_name" {
+  value       = module.monitoring.prometheus_service_name
+  description = "Prometheus ECS Service Name"
+}
+
+output "grafana_service_name" {
+  value       = module.monitoring.grafana_service_name
+  description = "Grafana ECS Service Name"
+}
+
+output "prometheus_security_group_id" {
+  value       = module.monitoring.prometheus_security_group_id
+  description = "Prometheus Security Group ID"
+}
+
+output "grafana_security_group_id" {
+  value       = module.monitoring.grafana_security_group_id
+  description = "Grafana Security Group ID"
+}
+
+output "efs_security_group_id" {
+  value       = module.monitoring.efs_security_group_id
+  description = "EFS Security Group ID"
+}

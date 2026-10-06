@@ -53,6 +53,7 @@ module "ecs" {
   db_endpoint           = module.rds.db_instance_endpoint
   valkey_endpoint       = module.valkey.valkey_endpoint
   environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
 }
 
 # Caller identity for account ID
@@ -64,4 +65,21 @@ module "frontend" {
   environment    = var.environment
   aws_account_id = data.aws_caller_identity.current.account_id
   alb_dns_name   = module.alb.alb_dns_name
+}
+
+# 8. Observability & Monitoring Module (AWS Observability - Faz 04)
+module "monitoring" {
+  source                    = "../../modules/monitoring"
+  environment               = var.environment
+  vpc_id                    = module.vpc.vpc_id
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  public_subnet_ids         = module.vpc.public_subnet_ids
+  ecs_cluster_id            = module.ecs.cluster_id
+  ecs_cluster_name          = module.ecs.cluster_name
+  execution_role_arn        = module.ecs.execution_role_arn
+  backend_security_group_id = module.security_groups.ecs_security_group_id
+  prometheus_image          = var.prometheus_image
+  grafana_image                 = var.grafana_image
+  developer_ingress_cidr        = var.developer_ingress_cidr
+  service_connect_namespace_arn = module.ecs.service_connect_namespace_arn
 }

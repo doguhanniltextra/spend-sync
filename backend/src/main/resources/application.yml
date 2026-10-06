@@ -64,12 +64,22 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+      base-path: /actuator
   endpoint:
     health:
       show-details: when_authorized
       probes:
         enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name:spendsync}
+      environment: ${APP_ENVIRONMENT:local}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 spendsync:
   cors:

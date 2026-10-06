@@ -17,6 +17,12 @@ This document records technical incidents encountered during infrastructure depl
 9. [INC-009: Terraform S3 Remote State Bootstrap Dependency Cycle](#inc-009-terraform-s3-remote-state-bootstrap-dependency-cycle)
 10. [INC-010: Application Load Balancer Health Check Failure Due to Spring Security Filter Evaluation](#inc-010-application-load-balancer-health-check-failure-due-to-spring-security-filter-evaluation)
 11. [INC-011: Valkey In-Transit TLS Configuration Mismatch Triggering Rate Limiter Connection Timeouts](#inc-011-valkey-in-transit-tls-configuration-mismatch-triggering-rate-limiter-connection-timeouts)
+12. [INC-012: Prometheus TSDB Single-Writer File Lock Contention on EFS in ECS Fargate](#inc-012-prometheus-tsdb-single-writer-file-lock-contention-on-efs-in-ecs-fargate)
+13. [INC-013: Spring Boot Actuator HTTP 404 Due to Missing Micrometer Prometheus Dependency and Security Permit](#inc-013-spring-boot-actuator-http-404-due-to-missing-micrometer-prometheus-dependency-and-security-permit)
+14. [INC-014: ECS Service Connect DNS Resolution Failure Due to Missing appProtocol and Alias Drift](#inc-014-ecs-service-connect-dns-resolution-failure-due-to-missing-appprotocol-and-alias-drift)
+15. [INC-015: Terraform Inline Security Group Ingress Conflict with Standalone Security Group Rules](#inc-015-terraform-inline-security-group-ingress-conflict-with-standalone-security-group-rules)
+16. [INC-016: Terraform Cross-Module DAG Dependency Cycle and Cloud Map Namespace Lifecycle Deadlock](#inc-016-terraform-cross-module-dag-dependency-cycle-and-cloud-map-namespace-lifecycle-deadlock)
+17. [INC-017: Defense-in-Depth Security Group Network Isolation Triggering Grafana Upstream Timeout](#inc-017-defense-in-depth-security-group-network-isolation-triggering-grafana-upstream-timeout)
 
 ---
 
@@ -300,3 +306,199 @@ Local development executed against a standalone Redis container without SSL encr
 1. Set environment variable `REDIS_SSL_ENABLED=true` within the ECS task definition in `infra/modules/ecs/main.tf`.
 2. Verified Spring Boot's `LettuceClientConfiguration` conditionally enables SSL when `spring.data.redis.ssl.enabled=true`.
 3. Following container restart, Lettuce established encrypted TLS channels to the Valkey cluster, restoring rate limiter functionality.
+
+---
+
+## INC-012: Prometheus TSDB Single-Writer File Lock Contention on EFS in ECS Fargate
+
+- **Component:** Prometheus TSDB / Amazon EFS / ECS Task Lifecycle
+- **Severity:** High (CrashLoopBackOff during service updates, Prometheus service unavailable)
+- **Status:** Resolved
+
+### Description
+During ECS service updates or configuration reloads, new Prometheus tasks entering the `PENDING` -> `RUNNING` transition repeatedly terminated with exit code 1 or 2. CloudWatch logs displayed the fatal error:
+```
+tsdb: open /prometheus/lock: resource temporarily unavailable
+FAILED: Opening storage failed
+```
+The newly launched container crashed immediately, causing ECS to reschedule repeatedly in a CrashLoopBackOff loop.
+
+### Root Cause
+Prometheus employs an embedded TSDB (Time Series Database) with strict single-writer semantics enforced via an exclusive operating system file lock (`/prometheus/lock` utilizing `flock` / `fcntl`). The storage directory is mounted to persistent Amazon EFS via an EFS Access Point (`/prometheus`).
+
+Under default ECS Fargate rolling deployment configurations:
+`maximum_percent = 200`, `minimum_healthy_percent = 100`
+ECS starts the new task *before* stopping the existing task. Because both tasks mount the identical EFS directory simultaneously, the existing task held the open file lock descriptor on `/prometheus/lock`. The new task attempted to acquire the exclusive lock, received `EWOULDBLOCK` / `EAGAIN`, and exited fatally.
+
+### Resolution
+1. **Deployment Strategy Reconfiguration:** Reconfigured the Prometheus ECS service deployment parameters to enforce single-instance stateful deployment:
+   ```hcl
+   deployment_maximum_percent         = 100
+   deployment_minimum_healthy_percent = 0
+   ```
+2. **Immediate Remediation:** Manually terminated the predecessor Prometheus task (`aws ecs stop-task`) to release the NFS/EFS lock descriptor before launching the replacement task.
+3. **Data Integrity Verification:** Verified that the TSDB WAL (Write-Ahead Log) recovered cleanly upon subsequent single-instance boot without data corruption.
+
+### Preventative Controls
+- Enforce `deployment_maximum_percent = 100` and `deployment_minimum_healthy_percent = 0` for all stateful workloads backed by shared NFS/EFS persistent volumes requiring exclusive file locks.
+- For high-availability multi-replica metrics collection in future phases, adopt Thanos sidecars or Cortex/Mimir architecture rather than shared EFS volumes.
+
+---
+
+## INC-013: Spring Boot Actuator HTTP 404 Due to Missing Micrometer Prometheus Dependency and Security Permit
+
+- **Component:** Spring Boot 3.3.5 / Micrometer Metrics / Spring Security 6
+- **Severity:** High (Complete absence of application metrics, Prometheus scrape target failing)
+- **Status:** Resolved
+
+### Description
+Following the configuration of Prometheus to scrape the backend at `/actuator/prometheus`, Prometheus reported target status `DOWN` with HTTP 404 Not Found. While standard health checks (`/actuator/health`) returned HTTP 200 OK, the Prometheus exposition endpoint did not exist on the Spring Boot server.
+
+### Root Cause
+1. **Missing Runtime Dependency:** While `spring-boot-starter-actuator` was declared in `pom.xml`, Spring Boot Actuator does not automatically generate Prometheus-formatted text metrics (`text/plain; version=0.0.4`) without the `io.micrometer:micrometer-registry-prometheus` adapter present on the runtime classpath.
+2. **Security Filter Evaluation:** Spring Security's filter chain evaluated `/actuator/prometheus` under default authenticated rules (`.anyRequest().authenticated()`), returning HTTP 401/403 to unauthenticated internal probes even if the endpoint had been active.
+
+### Resolution
+1. **Dependency Injection:** Packaged `micrometer-registry-prometheus-1.13.0.jar` into the backend runtime classpath and updated the application build definition.
+2. **Exposition Configuration:** Explicitly exposed Prometheus in `application.yml`:
+   ```yaml
+   management:
+     endpoints:
+       web:
+         exposure:
+           include: health,info,prometheus
+     prometheus:
+       metrics:
+         export:
+           enabled: true
+   ```
+3. **Security Authorization Whitelist:** Updated `SecurityConfig.java` to explicitly permit internal monitoring traffic:
+   ```java
+   .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
+   ```
+4. Rebuilt and pushed the backend Docker image, resulting in immediate HTTP 200 responses with JVM, HikariCP, and HTTP request metrics.
+
+---
+
+## INC-014: ECS Service Connect DNS Resolution Failure Due to Missing appProtocol and Alias Drift
+
+- **Component:** ECS Service Connect / AWS Cloud Map / Envoy Sidecar / CoreDNS
+- **Severity:** Critical (Total internal service discovery failure; Prometheus unable to resolve backend endpoint)
+- **Status:** Resolved
+
+### Description
+Prometheus reported target error:
+```
+Get "http://backend:8080/actuator/prometheus": dial tcp: lookup backend on 10.0.0.2:53: no such host
+```
+The scrape engine was completely unable to resolve `backend` or `backend:8080` via internal DNS, resulting in zero ingested metrics.
+
+### Root Cause
+1. **VPC DNS vs. Service Connect Architecture:** Cloud Map namespaces created for ECS Service Connect with `discovery_type = "HTTP"` do NOT register standard Route 53 A-records in Amazon VPC Route 53 resolver (`10.0.0.2:53`). Standard DNS lookups directed to VPC DNS inevitably return `NXDOMAIN`.
+2. **Missing `appProtocol` Declaration:** In AWS ECS Service Connect, traffic interception and local proxy routing require `appProtocol = "http"` (or `"tcp"`) declared explicitly within the task definition `portMappings`. Without `appProtocol`, ECS does not configure Envoy to intercept and forward traffic for the declared client aliases.
+3. **Target & Alias Naming Drift:** The Service Connect client alias in ECS was initially configured with port or name variations that did not match the Prometheus scrape configuration target (`backend:8080`).
+
+### Resolution
+1. **Task Definition Port Mapping:** Updated the backend task definition in `infra/modules/ecs/main.tf` to explicitly declare `appProtocol = "http"`:
+   ```hcl
+   portMappings = [{
+     containerPort = 8080
+     hostPort      = 8080
+     protocol      = "tcp"
+     name          = "spendsync-backend-8080-tcp"
+     appProtocol   = "http"
+   }]
+   ```
+2. **Service Connect Alias Alignment:** Unified the Service Connect client alias on the backend service:
+   ```hcl
+   client_alias {
+     dns_name = "backend"
+     port     = 8080
+   }
+   ```
+3. **Prometheus Scrape Configuration Alignment:** Configured `prometheus.yml` scrape target exactly to `backend:8080`:
+   ```yaml
+   static_configs:
+     - targets: ['backend:8080']
+   ```
+4. Re-deployed both ECS services with Service Connect active. Prometheus resolved `backend:8080` via Envoy sidecar interception with scrape duration < 250ms and state `UP`.
+
+---
+
+## INC-015: Terraform Inline Security Group Ingress Conflict with Standalone Security Group Rules
+
+- **Component:** Terraform AWS Provider / Security Groups State Management
+- **Severity:** Medium (Pipeline deployment blocker, Terraform state collision)
+- **Status:** Resolved
+
+### Description
+Executing `terraform apply` during the addition of monitoring ingress rules failed with:
+```
+Error: creating Security Group Rule: InvalidPermission.Duplicate: the specified rule already exists
+```
+Subsequent runs attempted to delete the Prometheus rule on every cycle and recreate it, thrashing Terraform state.
+
+### Root Cause
+In Terraform, defining ingress rules inline within the `aws_security_group` resource (`ingress { ... }`) while simultaneously managing rules via standalone `aws_security_group_rule` resources creates a resource conflict. Terraform's AWS provider considers inline rules and standalone rules authoritative for the entire security group ingress rule set, causing them to overwrite and conflict with each other during state reconciliation.
+
+### Resolution
+1. Refactored `infra/modules/security_groups/main.tf` to eliminate inline ingress blocks on the ECS security group.
+2. Standardized all ingress rules across the module as standalone `aws_security_group_rule` resources (e.g., `aws_security_group_rule.alb_to_ecs_ingress`, `aws_security_group_rule.prometheus_to_backend_ingress`).
+3. Imported pre-existing unmanaged AWS rules into the Terraform state:
+   ```bash
+   terraform import module.security_groups.aws_security_group_rule.alb_to_ecs_ingress sgr-xxxxxxxxxxxxxxxxx
+   ```
+4. State converged to zero unintended changes with stable drift-free plans.
+
+---
+
+## INC-016: Terraform Cross-Module DAG Dependency Cycle and Cloud Map Namespace Lifecycle Deadlock
+
+- **Component:** Terraform DAG Compiler / AWS Cloud Map (`aws_service_discovery_http_namespace`)
+- **Severity:** High (Deployment deadlock, circular dependency preventing infrastructure apply)
+- **Status:** Resolved
+
+### Description
+Attempting to pass the Service Connect namespace created in `module.monitoring` into `module.ecs` triggered a fatal Terraform graph cycle:
+```
+Error: Cycle: module.ecs -> module.monitoring -> module.ecs
+```
+Attempting to destroy and recreate the namespace failed on AWS with:
+```
+ResourceInUse: Namespace ns-xxxxxxxxxxxx contains one or more registered services
+```
+
+### Root Cause
+1. **Circular Dependency:** `module.monitoring` depended on `module.ecs.cluster_id` to attach monitoring ECS services, while `module.ecs` depended on `module.monitoring.service_connect_namespace_id` to attach Service Connect configurations to the backend service. This formed a cyclic dependency graph in Terraform's DAG resolution.
+2. **Cloud Map Resource Lock:** AWS Cloud Map forbids deleting an HTTP or Private DNS namespace while active service discovery services remain registered inside it.
+
+### Resolution
+1. **Module Hierarchy Inversion:** Relocated the `aws_service_discovery_http_namespace` declaration into `infra/modules/ecs/service_connect.tf`. Because the core ECS cluster owns the service discovery mesh, the namespace belongs architecturally to the foundational compute layer.
+2. **Linear DAG Flow:** Restructured the module dependency graph into a strict single-direction pipeline:
+   `module.vpc` -> `module.security_groups` -> `module.ecs` (exports namespace) -> `module.monitoring`.
+3. Applied cleanly without cycles or Cloud Map orphaned resource locks.
+
+---
+
+## INC-017: Defense-in-Depth Security Group Network Isolation Triggering Grafana Upstream Timeout
+
+- **Component:** AWS Security Groups / Grafana Data Sources / Defense-in-Depth Architecture
+- **Severity:** Low / Informational (Design validation; prevented unauthorized lateral service access)
+- **Status:** Resolved
+
+### Description
+When configuring initial Grafana dashboards, attempting to configure a direct HTTP connection from Grafana to `http://backend:8080/actuator/prometheus` resulted in an immediate timeout:
+```
+504 Gateway Timeout / upstream request timeout
+```
+
+### Root Cause
+Our security group architecture enforces strict zero-trust network segregation:
+- **Backend SG Ingress:** Permits port 8080 strictly from `module.security_groups.alb_security_group_id` and `module.security_groups.prometheus_security_group_id`.
+- **Grafana SG:** Possesses no ingress rule into the backend security group.
+This isolation is by design: dashboard consumers should never scrape or query backend application servers directly, as this bypasses time-series buffering, introduces performance degradation on application containers, and violates least-privilege networking.
+
+### Resolution
+1. Confirmed architectural policy: Grafana must only communicate with Prometheus on port 9090 (`http://prometheus:9090`).
+2. Configured Prometheus as the sole authoritative datasource in Grafana (`datasources.yml`), keeping the backend network surface completely shielded from external visualization components.
+3. Verified that all application, JVM, and infrastructure dashboards render instantaneously from Prometheus TSDB without touching the backend container network boundary directly.

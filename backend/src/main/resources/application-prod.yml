@@ -11,6 +11,17 @@ spring:
         enabled: ${REDIS_SSL_ENABLED:true} # AWS Valkey Serverless TLS default true
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when_authorized
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: spendsync
+      environment: prod
+

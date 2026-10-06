@@ -119,9 +119,11 @@ resource "aws_ecs_task_definition" "backend" {
 
       portMappings = [
         {
+          name          = "backend-http"
           containerPort = 8080
           hostPort      = 8080
           protocol      = "tcp"
+          appProtocol   = "http"
         }
       ]
 
@@ -190,8 +192,21 @@ resource "aws_ecs_service" "backend" {
 
   health_check_grace_period_seconds = 180
 
-  lifecycle {
-    ignore_changes = [task_definition]
+  service_registries {
+    registry_arn = aws_service_discovery_service.backend.arn
+  }
+
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_private_dns_namespace.main.arn
+    service {
+      port_name      = "backend-http"
+      discovery_name = "backend"
+      client_alias {
+        port     = 8080
+        dns_name = "backend"
+      }
+    }
   }
 
   tags = {

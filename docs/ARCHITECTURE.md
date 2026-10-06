@@ -12,28 +12,39 @@ SpendSync is a procurement and spend management platform architected as a modula
 
 ```mermaid
 flowchart TD
-    Client[Web Browser / Client] -->|HTTPS 443| CloudFront[CloudFront Global CDN: d111111abcdef8.cloudfront.net]
+    Client["Web Browser / Client"] -->|HTTPS 443| CloudFront["CloudFront Global CDN: dop9lgzphkwor.cloudfront.net"]
+    DevUser["Operator / Engineer"] -->|HTTP 3000 (IP Whitelist)| Grafana["Grafana 11.2 (ECS Fargate Spot)"]
 
-    subgraph AWS_Edge [AWS Edge Infrastructure]
-        CloudFront -->|Static Assets /*| S3[Private S3 Bucket: spendsync-dev-frontend-<AWS_ACCOUNT_ID>]
-        CloudFront -->|API Requests /api/*| ALB[Application Load Balancer: spendsync-dev-alb]
+    subgraph AWS_Edge ["AWS Edge Infrastructure"]
+        CloudFront -->|Static Assets /*| S3["Private S3 Bucket: spendsync-dev-frontend-<AWS_ACCOUNT_ID>"]
+        CloudFront -->|API Requests /api/*| ALB["Application Load Balancer: spendsync-dev-alb"]
     end
 
-    subgraph AWS_VPC [VPC 10.0.0.0/16 eu-north-1]
-        subgraph Public_Subnets [Public Subnets - 2 AZs]
+    subgraph AWS_VPC ["VPC 10.0.0.0/16 eu-north-1"]
+        subgraph Public_Subnets ["Public Subnets - 2 AZs"]
             ALB
+            Grafana
         end
 
-        subgraph Private_Subnets [Private Subnets - 2 AZs]
-            ECS[ECS Fargate Spot: spendsync-dev-backend]
-            RDS[(RDS PostgreSQL 16: spendsync_db)]
-            Valkey[(ElastiCache Valkey Serverless Cache)]
+        subgraph Private_Subnets ["Private Subnets - 2 AZs"]
+            ECS["ECS Fargate Spot: spendsync-dev-backend"]
+            Prometheus["Prometheus 2.54 (ECS Fargate Spot)"]
+            RDS[("RDS PostgreSQL 16: spendsync_db")]
+            Valkey[("ElastiCache Valkey Serverless Cache")]
+            EFS[("Amazon EFS: Persistent Storage")]
+        end
+
+        subgraph Mesh ["ECS Service Connect Mesh: spendsync-internal"]
+            Prometheus -.->|HTTP 8080 Scrape backend:8080| ECS
+            Grafana -.->|HTTP 9090 Query prometheus:9090| Prometheus
         end
     end
 
     ALB -->|HTTP 8080| ECS
     ECS -->|JDBC 5432| RDS
     ECS -->|TLS 6379| Valkey
+    Prometheus -->|Mount AP /prometheus| EFS
+    Grafana -->|Mount AP /grafana| EFS
 ```
 
 ---
@@ -111,11 +122,14 @@ Manages prerequisite resources required by Terraform and continuous integration:
 ### 5.3. Security Groups (`infra/modules/security_groups/`)
 Enforces multi-tier network isolation through chained security group rules:
 - **ALB Security Group:** Ingress allowed on ports 80 and 443 from `0.0.0.0/0`.
-- **ECS Security Group:** Ingress allowed on port 8080 restricted exclusively to the ALB Security Group ID.
-- **RDS Security Group:** Ingress allowed on port 5432 restricted exclusively to the ECS Security Group ID.
-- **Valkey Security Group:** Ingress allowed on port 6379 restricted exclusively to the ECS Security Group ID.
+- **ECS Backend Security Group:** Ingress allowed on port 8080 strictly from ALB Security Group and Prometheus Security Group. Direct public ingress is denied.
+- **Prometheus Security Group:** Ingress allowed on port 9090 strictly from the Grafana Security Group. All direct public access is prohibited.
+- **Grafana Security Group:** Ingress allowed on port 3000 restricted strictly to authorized engineer IP addresses (`developer_ingress_cidr` e.g., `/32`).
+- **EFS Security Group:** Ingress allowed on NFS port 2049 strictly from Prometheus and Grafana Security Groups.
+- **RDS Security Group:** Ingress allowed on port 5432 restricted exclusively to the ECS Backend Security Group ID.
+- **Valkey Security Group:** Ingress allowed on port 6379 restricted exclusively to the ECS Backend Security Group ID.
 
-Direct public ingress to database and cache layers is structurally prohibited.
+Direct public ingress to database, cache, storage, and internal metric scraping layers is structurally prohibited.
 
 ### 5.4. Database and Cache Layer
 - **Amazon RDS PostgreSQL 16:**
@@ -198,7 +212,48 @@ The infrastructure codebase is organized to support separate environments (`dev`
    - Access token lifetime: 15 minutes; Refresh token lifetime: 7 days.
    - Fine-grained role-to-permission mapping managed in `RolePermissionRegistry`.
 2. **Network Perimeter:**
-   - Database and cache instances possess zero public IP addresses and reside strictly within private subnets.
+   - Database, cache, and metric storage instances possess zero public IP addresses and reside strictly within private subnets.
    - CloudFront terminates external TLS 1.3 connections; direct HTTP requests to the ALB are filtered by Origin Access headers.
+   - Grafana monitoring dashboard is shielded from the public internet via developer IP whitelisting.
 3. **Continuous Secret Auditing:**
    - Gitleaks scans every commit and pull request to prevent accidental leakage of AWS keys, database credentials, or private certificates.
+
+---
+
+## 9. Observability & Telemetry Architecture (`infra/modules/monitoring/`)
+
+SpendSync incorporates an end-to-end, cost-optimized observability subsystem running self-hosted Prometheus and Grafana on AWS ECS Fargate Spot backed by Amazon EFS persistence.
+
+### 9.1. Architectural Philosophy & FinOps Optimization
+In typical AWS production deployments, AWS CloudWatch Managed Service for Prometheus (AMP) and Managed Grafana (AMG) incur minimum baseline commitments exceeding $50–$90/month. SpendSync achieves production-grade telemetry at approximately **$1.30/month** by leveraging:
+- **ECS Fargate Spot Compute:** 70% discount over On-Demand compute pricing.
+- **Amazon EFS Persistence:** Retains time-series database (TSDB) metrics and Grafana dashboards without running dedicated EC2 storage instances.
+- **ECS Service Connect (AWS Cloud Map):** Eliminates the need for internal Application Load Balancers for service discovery, routing scrapes through lightweight Envoy sidecars.
+
+### 9.2. Persistent Storage Architecture (Amazon EFS)
+- **EFS File System:** General Purpose mode with AWS KMS at-rest encryption (`infra/modules/monitoring/efs.tf`).
+- **POSIX Isolation via Access Points:**
+  - `/prometheus` Access Point: Root directory ownership UID 65534 / GID 65534 (`nobody:nogroup`).
+  - `/grafana` Access Point: Root directory ownership UID 472 / GID 472 (`grafana:grafana`).
+- **Single-Writer TSDB Lifecycle Management:** Prometheus embeds SQLite/WAL locks (`/prometheus/lock`). Stateful single-instance semantics are enforced via ECS deployment parameters (`deployment_maximum_percent = 100`, `deployment_minimum_healthy_percent = 0`), preventing lock contention across rolling deployments.
+
+### 9.3. Internal Service Discovery (ECS Service Connect)
+- **Cloud Map HTTP Namespace:** `spendsync-internal` manages mesh routing.
+- **Interception Mechanism:** Task definitions declare `appProtocol = "http"` on port 8080 and 9090.
+- **Service Endpoints:**
+  - `backend:8080`: Resolves to backend container's Actuator port via Envoy sidecar proxying.
+  - `prometheus:9090`: Resolves to Prometheus query API for Grafana.
+  
+### 9.4. Application Instrumentation (Spring Boot & Micrometer)
+- **Exposition Endpoint:** `http://backend:8080/actuator/prometheus` (scraped every 15s).
+- **Core Metrics Telemetry:**
+  - **JVM Performance:** Garbage collection pause duration (`jvm_gc_pause_seconds`), memory allocations across Eden, Old Gen, Metaspace (`jvm_memory_used_bytes`), active thread count (`jvm_threads_live_threads`).
+  - **Connection Pooling:** HikariCP active, idle, pending, and max connections (`hikaricp_connections_*`).
+  - **HTTP Traffic & Error Rates:** Latency percentiles (p50, p95, p99) and response status distribution (`http_server_requests_seconds_*`).
+  - **Host Resource Utilization:** System and process CPU usage (`system_cpu_usage`, `process_cpu_usage`).
+
+### 9.5. Visualization & Security Controls (Grafana)
+- **Automated Provisioning:** Datasources (`datasources.yml`) and dashboards (`dashboards.yml` and `spendsync-overview.json`) are version-controlled and baked into container image deployments.
+- **Zero-Trust Network Perimeter:**
+  - Ingress on port 3000 is locked to the operator's IP address (`developer_ingress_cidr`). Shodan and arbitrary internet scanners cannot reach the port.
+  - Direct communication between Grafana and the backend is blocked at the Security Group level; all telemetry flows exclusively through Prometheus TSDB.

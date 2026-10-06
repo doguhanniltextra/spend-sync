@@ -37,3 +37,8 @@ variable "environment" {
   default     = "dev"
   description = "Target environment name"
 }
+
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID for private DNS namespace"
+}
