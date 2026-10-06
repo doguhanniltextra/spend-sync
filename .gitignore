@@ -78,6 +78,7 @@ actions-runner/
 *.tfstate.*
 *.tfvars
 !infra/envs/dev/dev.tfvars
+!infra/envs/prod/prod.tfvars
 *.tfplan
 
 
