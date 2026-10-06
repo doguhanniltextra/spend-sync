@@ -2,14 +2,80 @@
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![AWS](https://img.shields.io/badge/AWS-Cloud--Native-232F3E.svg?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
+[![Terraform](https://img.shields.io/badge/Terraform-1.11-7B42BC.svg?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF.svg?logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7.2-red.svg)](https://redis.io/)
 [![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-SpendSync is an enterprise procurement and spend management platform built with Spring Boot, Java 21, Redis, and React. It covers standard purchasing workflows: purchase requisitions, approval chains, purchase orders, goods receiving, 3-way invoice matching, payment batches, and a self-service vendor portal.
+SpendSync is a procurement and spend management platform built with Spring Boot 3.3, Java 21, Redis 7.2, and React 18. It automates purchasing workflows including purchase requisitions, approval chains, purchase orders, goods receipts, three-way invoice matching, payment batches, and a self-service vendor portal.
+
+---
+
+## Technical Documentation and Operational Guides
+
+Comprehensive technical specifications, operational procedures, and architectural decisions are documented within the `docs/` directory:
+
+- **[System and Cloud Architecture](docs/ARCHITECTURE.md):** Complete specification covering domain modules, multi-stage containerization, AWS ECR lifecycle policies, Terraform infrastructure modules (VPC, Security Groups, RDS PostgreSQL 16, ElastiCache Serverless Valkey, ALB, ECS Fargate Spot), CloudFront Origin Access Control, and CI/CD pipelines.
+- **[Incident Post-Mortems and Troubleshooting](docs/POST_MORTEMS.md):** Detailed technical analysis of 11 production incidents, detailing symptoms, root causes, corrective actions, and preventative controls.
+- **[Operations Runbook](docs/RUNBOOK.md):** Standard operating procedures for service deployment, automated smoke tests, manual health checks, ECS task rollback, CloudFront cache invalidation, and CloudWatch log inspection.
+- **Architecture Decision Records (ADRs):**
+  - [ADR 001: Selection of AWS ECS Fargate Over AWS EKS](docs/adr/001-ecs-over-eks.md)
+  - [ADR 002: CloudFront Unified Origin and Reverse Proxy for API Routing](docs/adr/002-cloudfront-reverse-proxy.md)
+
+---
+
+## Live Demonstration and Deployment Status
+
+- **Web Application:** `https://d111111abcdef8.cloudfront.net` *(Amazon CloudFront & S3 Private Origin)*
+- **API Ingress:** `https://d111111abcdef8.cloudfront.net/api/v1/`
+- **Operational Availability:** To optimize cloud operational expenditures and eliminate idle runtime costs, compute resources (AWS ECS Fargate Spot) and managed data stores are provisioned on demand via automated CI/CD workflows. The complete environment can be spun up on request through GitHub Actions.
+- **Demonstration Credentials:**
+  - Email: `cfo@spendsync.com`
+  - Password: `Password123!`
+
+---
+
+<details open>
+<summary><h3>Cloud Infrastructure Topology</h3></summary>
+
+The platform is provisioned via Infrastructure as Code (Terraform `>= 1.11.0`) on AWS (`eu-north-1`):
+
+```mermaid
+flowchart TD
+    Client[Web Browser / Client] -->|HTTPS 443| CloudFront[CloudFront Global CDN: d111111abcdef8.cloudfront.net]
+
+    subgraph AWS_Edge [AWS Edge Infrastructure]
+        CloudFront -->|Static Assets /*| S3[Private S3 Bucket: spendsync-dev-frontend-<AWS_ACCOUNT_ID>]
+        CloudFront -->|API Requests /api/*| ALB[Application Load Balancer: spendsync-dev-alb]
+    end
+
+    subgraph AWS_VPC [VPC 10.0.0.0/16 eu-north-1]
+        subgraph Public_Subnets [Public Subnets - 2 AZs]
+            ALB
+        end
+
+        subgraph Private_Subnets [Private Subnets - 2 AZs]
+            ECS[ECS Fargate Spot: spendsync-dev-backend]
+            RDS[(RDS PostgreSQL 16: spendsync_db)]
+            Valkey[(ElastiCache Valkey Serverless Cache)]
+        end
+    end
+
+    ALB -->|HTTP 8080| ECS
+    ECS -->|JDBC 5432| RDS
+    ECS -->|TLS 6379| Valkey
+```
+
+- **Edge & Static Delivery:** Static assets reside in a private S3 bucket accessed via CloudFront Origin Access Control (SigV4). All `/api/*` traffic routes directly to the Application Load Balancer over HTTPS, eliminating CORS preflight overhead and browser mixed content restrictions.
+- **Container Compute:** The Spring Boot backend runs in Amazon ECS Fargate Spot tasks behind an Application Load Balancer with multi-AZ private subnet routing to Amazon RDS PostgreSQL 16 (Graviton gp3) and Amazon ElastiCache Serverless Valkey (Redis 7.2 compatible with in-transit TLS).
+- **Gated CI/CD:** GitHub Actions workflows enforce Gitleaks secret scanning, Flyway migration linting, JaCoCo coverage thresholds, and manual or semantic tag-triggered zero-downtime deployments with post-deploy smoke tests.
+
+</details>
 
 ---
 
@@ -118,7 +184,9 @@ sequenceDiagram
 | **API & Documentation** | SpringDoc OpenAPI 2.5, Swagger UI, Bean Validation |
 | **Frontend Framework** | React 18.3, TypeScript 5.5, Vite 5.4 |
 | **State & Styling** | TanStack React Query v5, Zustand, TailwindCSS, Lucide Icons, Axios |
-| **Infrastructure & Tools** | Docker (Multi-stage Layered JAR), Docker Compose, RedisInsight |
+| **Cloud Infrastructure** | AWS ECS Fargate Spot, AWS RDS PostgreSQL 16 (Graviton gp3), ElastiCache Serverless Valkey, CloudFront, S3, ECR |
+| **IaC & CI/CD Pipeline** | Terraform 1.11 (Native S3 Locking), GitHub Actions, Gitleaks, JaCoCo, Flyway |
+| **Local Tools** | Docker (Multi-stage Layered JAR), Docker Compose, RedisInsight |
 
 </details>
 
@@ -127,8 +195,6 @@ sequenceDiagram
 <details open>
 <summary><h3>Automated Testing & Coverage Metrics</h3></summary>
 
-
-
 The backend test suite contains **577 automated tests** executed via JUnit 5, Mockito, and Testcontainers (PostgreSQL 16 & Redis 7.2). All boilerplate artifacts (Entities, DTOs, Configurations) are excluded to reflect pure domain logic.
 
 | Metric | Measured Value | Covered / Total Units | Scope |
@@ -136,8 +202,7 @@ The backend test suite contains **577 automated tests** executed via JUnit 5, Mo
 | **Line Coverage** | **78.46%** | 3,967 / 5,056 Lines | Pure business, service, and security logic |
 | **Branch Coverage** | **54.08%** | 954 / 1,764 Branches | Domain invariants & boundary matrix |
 | **Instruction Coverage** | **72.31%** | 18,150 / 25,101 Instructions | JVM bytecode execution coverage |
-| **Test Suite Status** | **100% Passing** | 512 Tests (0 Failures, 0 Skipped) | Executed in ~42s |
-
+| **Test Suite Status** | **100% Passing** | 577 Tests (0 Failures, 0 Skipped) | Executed in ~48s |
 
 #### Container Integration Test Suite (`com.enterprise.spendsync.testcontainers`)
 
