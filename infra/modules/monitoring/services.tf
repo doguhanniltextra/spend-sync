@@ -9,6 +9,10 @@ resource "aws_ecs_service" "prometheus" {
   task_definition = aws_ecs_task_definition.prometheus.arn
   desired_count   = 1
 
+  # INC-012: Prevent TSDB lock contention on shared EFS persistent volume during deployments
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
     weight            = 1
