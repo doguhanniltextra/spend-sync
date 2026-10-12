@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **AWS Budget & FinOps Cost Alerting**: Multi-tier AWS budget monitoring (overall monthly $50, RDS $20, ECS $15) with Amazon SNS fanout, Go Lambda handler on AWS Graviton (`arm64`, `provided.al2023`), and formatted email delivery via Amazon SES with direct SNS fallback.
+- **Automated CI/CD Changelog Enforcement**: Pull Request workflow verifying Keep a Changelog syntax and ensuring code changes are documented before merging.
+
+### Fixed
+- **ECS Service Connect Cloud Map Naming Collision (INC-018)**: Disambiguated Service Connect entity name (`discovery_name = "backend-connect"`) to resolve HTTP 400 collision with standalone Route 53 service discovery while preserving `client_alias` for internal Prometheus metrics scraping.
+
 ## [1.0.0] - 2026-08-24
 
 ### Added
@@ -19,4 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation & Tools**: Interactive Swagger/OpenAPI 2.5 docs, HTML documentation portal, and developer quickstart HTTP client scripts.
 - **Automated Test Suite**: 512 automated unit and integration tests (78.46% Line Coverage, 54.08% Branch Coverage) with Testcontainers (PostgreSQL 16 & Redis 7.2).
 
+[Unreleased]: https://github.com/doguhanniltextra/spend-sync/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/doguhanniltextra/spend-sync/releases/tag/v1.0.0

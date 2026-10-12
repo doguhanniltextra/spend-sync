@@ -1,0 +1,92 @@
+name: Changelog Enforcement & Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: changelog-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate-changelog:
+    name: Validate Changelog
+    runs-on: self-hosted
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Evaluate Skip Labels
+        id: evaluate_skip
+        run: |
+          echo "Evaluating PR labels for changelog bypass..."
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          
+          if echo "$LABELS" | grep -qE "skip-changelog|no-changelog|dependencies"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::Changelog check bypassed via PR label."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Changelog Modification in PR Diff
+        if: steps.evaluate_skip.outputs.skip != 'true'
+        run: |
+          echo "Inspecting modified files in PR..."
+          
+          # Compute modified files between target base branch and current HEAD
+          BASE_REF="origin/${{ github.base_ref || 'main' }}"
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD || git diff --name-only HEAD~1...HEAD)
+          
+          echo "Changed files in this PR:"
+          echo "$CHANGED_FILES"
+          
+          # Check if CHANGELOG.md was updated
+          if echo "$CHANGED_FILES" | grep -qx "CHANGELOG.md"; then
+            echo "::notice::CHANGELOG.md has been modified in this PR. Proceeding to format validation."
+          else
+            # Check if this PR only changed docs, CI, or non-production assets
+            NON_CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "^(\.github\/|\.agents\/|docs\/|\.gitignore|README\.md)" || true)
+            
+            if [ -z "$NON_CODE_CHANGES" ]; then
+              echo "::notice::Only documentation/CI configuration files were modified. Changelog update optional."
+            else
+              echo "::error file=CHANGELOG.md::Code modifications were detected in this Pull Request, but CHANGELOG.md was not updated. Please document your changes under the '## [Unreleased]' section, or apply the 'skip-changelog' label to this PR if an entry is not required."
+              exit 1
+            fi
+          fi
+
+      - name: Lint Keep a Changelog Syntax
+        run: |
+          echo "Validating CHANGELOG.md against Keep a Changelog 1.0.0 specification..."
+          
+          # 1. Verify existence of CHANGELOG.md
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "::error::CHANGELOG.md file is missing from repository root."
+            exit 1
+          fi
+
+          # 2. Verify ## [Unreleased] section exists
+          if ! grep -qE "^## \[Unreleased\]" CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::Missing '## [Unreleased]' section header. According to Keep a Changelog 1.0.0, this header is required for ongoing changes."
+            exit 1
+          fi
+
+          # 3. Verify standard category headers under Unreleased or versions
+          INVALID_HEADERS=$(grep -E "^### " CHANGELOG.md | grep -vE "^### (Added|Changed|Deprecated|Removed|Fixed|Security)$" || true)
+          if [ -n "$INVALID_HEADERS" ]; then
+            echo "::warning file=CHANGELOG.md::Non-standard category headers detected: $INVALID_HEADERS. Expected categories are: Added, Changed, Deprecated, Removed, Fixed, Security."
+          fi
+
+          # 4. Verify link references at the bottom
+          if ! grep -qE "^\[Unreleased\]: " CHANGELOG.md; then
+            echo "::warning file=CHANGELOG.md::Missing '[Unreleased]: https://...' reference link at the bottom of CHANGELOG.md."
+          fi
+
+          echo "::notice::CHANGELOG.md successfully validated against Keep a Changelog v1.0.0 specification."
