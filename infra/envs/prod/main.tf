@@ -46,6 +46,7 @@ module "alb" {
 # 6. ECS Fargate Module (AWS-03_06)
 module "ecs" {
   source                = "../../modules/ecs"
+  vpc_id                = module.vpc.vpc_id
   public_subnet_ids     = module.vpc.public_subnet_ids
   ecs_security_group_id = module.security_groups.ecs_security_group_id
   target_group_arn      = module.alb.target_group_arn
@@ -64,4 +65,15 @@ module "frontend" {
   environment    = var.environment
   aws_account_id = data.aws_caller_identity.current.account_id
   alb_dns_name   = module.alb.alb_dns_name
+}
+
+# 8. Budget & Cost Alerting Module (AWS-01, AWS-02, AWS-03)
+module "budget" {
+  source               = "../../modules/budget"
+  environment          = var.environment
+  alert_email          = var.alert_email
+  sender_email         = var.sender_email
+  monthly_budget_limit = var.monthly_budget_limit
+  rds_budget_limit     = var.rds_budget_limit
+  ecs_budget_limit     = var.ecs_budget_limit
 }

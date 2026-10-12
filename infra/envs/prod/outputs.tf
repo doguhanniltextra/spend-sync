@@ -128,3 +128,19 @@ output "frontend_url" {
   value       = module.frontend.frontend_url
   description = "The public HTTPS URL to access the SpendSync frontend application"
 }
+
+# Budget Outputs (AWS-01)
+output "budget_sns_topic_arn" {
+  value       = module.budget.sns_topic_arn
+  description = "ARN of the SNS topic for budget alerts"
+}
+
+output "budget_sns_topic_name" {
+  value       = module.budget.sns_topic_name
+  description = "Name of the SNS topic for budget alerts"
+}
+
+output "budget_lambda_function_arn" {
+  value       = module.budget.lambda_function_arn
+  description = "ARN of the budget alert Lambda function"
+}
