@@ -69,17 +69,28 @@ module "frontend" {
 
 # 8. Observability & Monitoring Module (AWS Observability - Faz 04)
 module "monitoring" {
-  source                    = "../../modules/monitoring"
-  environment               = var.environment
-  vpc_id                    = module.vpc.vpc_id
-  private_subnet_ids        = module.vpc.private_subnet_ids
-  public_subnet_ids         = module.vpc.public_subnet_ids
-  ecs_cluster_id            = module.ecs.cluster_id
-  ecs_cluster_name          = module.ecs.cluster_name
-  execution_role_arn        = module.ecs.execution_role_arn
-  backend_security_group_id = module.security_groups.ecs_security_group_id
-  prometheus_image          = var.prometheus_image
+  source                        = "../../modules/monitoring"
+  environment                   = var.environment
+  vpc_id                        = module.vpc.vpc_id
+  private_subnet_ids            = module.vpc.private_subnet_ids
+  public_subnet_ids             = module.vpc.public_subnet_ids
+  ecs_cluster_id                = module.ecs.cluster_id
+  ecs_cluster_name              = module.ecs.cluster_name
+  execution_role_arn            = module.ecs.execution_role_arn
+  backend_security_group_id     = module.security_groups.ecs_security_group_id
+  prometheus_image              = var.prometheus_image
   grafana_image                 = var.grafana_image
   developer_ingress_cidr        = var.developer_ingress_cidr
   service_connect_namespace_arn = module.ecs.service_connect_namespace_arn
+}
+
+# 9. Budget & Cost Alerting Module
+module "budget" {
+  source               = "../../modules/budget"
+  environment          = var.environment
+  alert_email          = var.alert_email
+  sender_email         = var.sender_email
+  monthly_budget_limit = var.monthly_budget_limit
+  rds_budget_limit     = var.rds_budget_limit
+  ecs_budget_limit     = var.ecs_budget_limit
 }

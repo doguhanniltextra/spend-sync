@@ -159,3 +159,19 @@ output "efs_security_group_id" {
   value       = module.monitoring.efs_security_group_id
   description = "EFS Security Group ID"
 }
+
+# Budget & Cost Alerting Outputs
+output "budget_sns_topic_arn" {
+  value       = module.budget.sns_topic_arn
+  description = "ARN of the SNS topic for budget alerts"
+}
+
+output "budget_sns_topic_name" {
+  value       = module.budget.sns_topic_name
+  description = "Name of the SNS topic for budget alerts"
+}
+
+output "budget_lambda_function_arn" {
+  value       = module.budget.lambda_function_arn
+  description = "ARN of the budget alert Lambda function"
+}

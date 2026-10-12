@@ -44,3 +44,33 @@ variable "developer_ingress_cidr" {
   description = "Authorized CIDR block for direct Grafana UI access (port 3000)"
 }
 
+variable "alert_email" {
+  type        = string
+  default     = ""
+  description = "Recipient email address for AWS Budget notifications"
+}
+
+variable "monthly_budget_limit" {
+  type        = string
+  default     = "50"
+  description = "Total monthly budget threshold in USD"
+}
+
+variable "rds_budget_limit" {
+  type        = string
+  default     = "20"
+  description = "Monthly RDS expenditure threshold in USD"
+}
+
+variable "ecs_budget_limit" {
+  type        = string
+  default     = "15"
+  description = "Monthly ECS compute expenditure threshold in USD"
+}
+
+variable "sender_email" {
+  type        = string
+  default     = ""
+  description = "SES verified sender email address for Lambda budget alerts"
+}
+
