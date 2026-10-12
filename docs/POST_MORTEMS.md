@@ -23,6 +23,7 @@ This document records technical incidents encountered during infrastructure depl
 15. [INC-015: Terraform Inline Security Group Ingress Conflict with Standalone Security Group Rules](#inc-015-terraform-inline-security-group-ingress-conflict-with-standalone-security-group-rules)
 16. [INC-016: Terraform Cross-Module DAG Dependency Cycle and Cloud Map Namespace Lifecycle Deadlock](#inc-016-terraform-cross-module-dag-dependency-cycle-and-cloud-map-namespace-lifecycle-deadlock)
 17. [INC-017: Defense-in-Depth Security Group Network Isolation Triggering Grafana Upstream Timeout](#inc-017-defense-in-depth-security-group-network-isolation-triggering-grafana-upstream-timeout)
+18. [INC-018: AWS Cloud Map Naming Collision Between Standalone Service Discovery and ECS Service Connect Discovery Name](#inc-018-aws-cloud-map-naming-collision-between-standalone-service-discovery-and-ecs-service-connect-discovery-name)
 
 ---
 
@@ -502,3 +503,49 @@ This isolation is by design: dashboard consumers should never scrape or query ba
 1. Confirmed architectural policy: Grafana must only communicate with Prometheus on port 9090 (`http://prometheus:9090`).
 2. Configured Prometheus as the sole authoritative datasource in Grafana (`datasources.yml`), keeping the backend network surface completely shielded from external visualization components.
 3. Verified that all application, JVM, and infrastructure dashboards render instantaneously from Prometheus TSDB without touching the backend container network boundary directly.
+
+---
+
+## INC-018: AWS Cloud Map Naming Collision Between Standalone Service Discovery and ECS Service Connect Discovery Name
+
+- **Component:** AWS ECS Fargate / AWS Cloud Map (`aws_service_discovery_service`) / ECS Service Connect
+- **Severity:** High (Blocked ECS backend service creation; deployment failure with HTTP 400)
+- **Status:** Resolved
+
+### Description
+Executing `terraform apply` for the `dev` environment failed during the creation of `module.ecs.aws_ecs_service.backend` with an AWS API client exception:
+```
+Error: creating ECS Service (spendsync-backend-dev-service): operation error ECS: CreateService, https response error StatusCode: 400, RequestID: 605f610c-f6ff-47ed-8c97-aa925ccfe621, ClientException: Service already exists. (Service: ServiceDiscovery, Status Code: 400, Request ID: ea6fc939-cc38-4fe3-8534-aad649aa3947) (SDK Attempt Count: 1)
+
+  with module.ecs.aws_ecs_service.backend,
+  on ../../modules/ecs/main.tf line 169, in resource "aws_ecs_service" "backend":
+ 169: resource "aws_ecs_service" "backend" {
+```
+
+### Root Cause
+1. **Dual Service Discovery Declarations:** In `infra/modules/ecs/service_connect.tf`, a standalone Cloud Map resource `aws_service_discovery_service.backend` was declared with `name = "backend"` under the private DNS namespace `spendsync.local`. Terraform created this Cloud Map service resource first.
+2. **Implicit Service Connect Resource Creation:** The `aws_ecs_service.backend` resource was configured with both:
+   - `service_registries { registry_arn = aws_service_discovery_service.backend.arn }` (classic Cloud Map registration)
+   - `service_connect_configuration` containing `service { discovery_name = "backend" ... }`
+3. **Collision in Cloud Map Namespace:** When ECS provisions a service with Service Connect, ECS itself asynchronously invokes the AWS Cloud Map API (`CreateService`) using the specified `discovery_name` ("backend") within the namespace `spendsync.local`. Because a Cloud Map service named `"backend"` had already been created by the standalone Terraform resource, Cloud Map rejected the ECS request with `400 ClientException: Service already exists`.
+
+### Resolution
+1. **Disambiguated Discovery Name:** Updated `infra/modules/ecs/main.tf` to separate the Cloud Map Service Connect entity name from the classic Service Discovery entity name by renaming `discovery_name` to `"backend-connect"`:
+   ```hcl
+   service_connect_configuration {
+     enabled   = true
+     namespace = aws_service_discovery_private_dns_namespace.main.arn
+     service {
+       port_name      = "backend-http"
+       discovery_name = "backend-connect"
+       client_alias {
+         dns_name = "backend"
+         port     = 8080
+       }
+     }
+   }
+   ```
+2. **Preserved Client Alias for Service Connect Mesh:** Maintained `client_alias { dns_name = "backend", port = 8080 }` so that internal consumers (Prometheus scraping `http://backend:8080/actuator/prometheus`) continue intercepting and routing traffic via the Envoy sidecar proxy without DNS dependencies.
+3. **Preserved Pre-existing Cloud Map Entity:** Preserved the pre-existing `aws_service_discovery_service.backend` (`name = "backend"`) and `service_registries` to avoid breaking changes to the existing Cloud Map namespace resources.
+4. **Verification:** Re-ran `terraform plan` and `terraform apply`. The ECS service created in under 2 seconds and stabilized with desired count 1.
+

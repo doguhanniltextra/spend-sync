@@ -201,7 +201,7 @@ resource "aws_ecs_service" "backend" {
     namespace = aws_service_discovery_private_dns_namespace.main.arn
     service {
       port_name      = "backend-http"
-      discovery_name = "backend"
+      discovery_name = "backend-connect"
       client_alias {
         port     = 8080
         dns_name = "backend"
