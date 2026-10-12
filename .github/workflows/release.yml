@@ -1,0 +1,93 @@
+name: Release & Pre-Release Publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Git Tag to release (e.g., v1.0.0-rc.1)'
+        required: true
+        type: string
+      is_prerelease:
+        description: 'Mark as Pre-release (Release Candidate / Beta)'
+        required: true
+        type: boolean
+        default: true
+      is_draft:
+        description: 'Create as Draft release (for manual review before publishing)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Publish Release
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Release Configuration
+        id: config
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+            IS_PRE="${{ github.event.inputs.is_prerelease }}"
+            IS_DRAFT="${{ github.event.inputs.is_draft }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            if echo "$TAG" | grep -qE -- "-(rc|beta|alpha|dev)"; then
+              IS_PRE="true"
+            else
+              IS_PRE="false"
+            fi
+            IS_DRAFT="false"
+          fi
+
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRE" >> $GITHUB_OUTPUT
+          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+
+          echo "Target Release Tag: $TAG"
+          echo "Extracted Version: $VERSION"
+          echo "Is Pre-release: $IS_PRE"
+          echo "Is Draft: $IS_DRAFT"
+
+      - name: Extract Release Notes from Changelog
+        id: extract_notes
+        run: |
+          VERSION="${{ steps.config.outputs.version }}"
+          echo "Extracting release notes for version: $VERSION from CHANGELOG.md..."
+          
+          # Extract markdown between the targeted version header and the next version header or link definitions
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { found=1; next }
+            found && (/^## \[/ || /^\[.*\]:/) { exit }
+            found { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "Release notes for version $VERSION not found in CHANGELOG.md. Using fallback notes."
+            echo "Release ${{ steps.config.outputs.tag }} for SpendSync platform." > RELEASE_NOTES.md
+          fi
+          
+          echo "=== Extracted Release Notes ==="
+          cat RELEASE_NOTES.md
+          echo "==============================="
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.config.outputs.tag }}
+          name: SpendSync ${{ steps.config.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ steps.config.outputs.is_prerelease == 'true' }}
+          draft: ${{ steps.config.outputs.is_draft == 'true' }}
+          generate_release_notes: true
+
