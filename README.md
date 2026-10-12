@@ -29,17 +29,6 @@ Comprehensive technical specifications, operational procedures, and architectura
 
 ---
 
-## Live Demonstration and Deployment Status
-
-- **Web Application:** `https://d111111abcdef8.cloudfront.net` *(Amazon CloudFront & S3 Private Origin)*
-- **API Ingress:** `https://d111111abcdef8.cloudfront.net/api/v1/`
-- **Operational Availability:** To optimize cloud operational expenditures and eliminate idle runtime costs, compute resources (AWS ECS Fargate Spot) and managed data stores are provisioned on demand via automated CI/CD workflows. The complete environment can be spun up on request through GitHub Actions.
-- **Demonstration Credentials:**
-  - Email: `cfo@spendsync.com`
-  - Password: `Password123!`
-
----
-
 <details open>
 <summary><h3>Cloud Infrastructure Topology</h3></summary>
 
